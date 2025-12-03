@@ -1,0 +1,7 @@
+# E203 is not PEP8 compliant, but is the default in Black/Ruff
+extend-ignore = E203
+max-line-length = 120
+# No need to traverse our git directory
+# There's no value in checking cache directories
+exclude = .git, __pycache__, .venv, venv, build, dist, *.egg-info
+max-complexity = 10
