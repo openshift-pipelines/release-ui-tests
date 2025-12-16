@@ -1,0 +1,6 @@
+pre-commit==4.1.0
+pytest==8.4.2
+pytest-playwright==0.7.1
+playwright==1.50.0
+pytest-bdd==8.1.0
+pytest-reportportal==5.5.4
