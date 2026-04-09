@@ -3,7 +3,42 @@ from typing import Any, Dict
 
 from pytest_bdd import given, parsers, then, when
 
+from framework.config.config import Config
 from framework.fixtures.async_bridge import run_async
+
+
+@given("the user is logged into openshift console with auth kube:admin")
+def user_logged_into_openshift_kube_admin(
+    page: Dict[str, Any],
+    config: Config,
+    playwright_event_loop: asyncio.AbstractEventLoop,
+    bdd_openshift_console_session: Dict[str, Any],
+) -> None:
+    """
+    Logs in once per feature file (module-scoped browser + session flag), then for later
+    scenarios reloads the console and returns to Overview so steps do not depend on the prior
+    scenario's last URL.
+    """
+
+    async def _ensure_logged_in() -> None:
+        if not bdd_openshift_console_session.get("kube_admin_logged_in"):
+            assert await page["login"].goto()
+            assert await page["login"].verify_successful_navigation_to_login_page()
+            assert await page["login"].choose_login_auth_type("kube:admin")
+            assert await page["login"].login()
+            assert await page["overview"].verify_on_page()
+            bdd_openshift_console_session["kube_admin_logged_in"] = True
+            return
+
+        await page["raw_page"].goto(config.base_url)
+        if "oauth" in page["raw_page"].url.lower():
+            bdd_openshift_console_session["kube_admin_logged_in"] = False
+            await _ensure_logged_in()
+            return
+
+        assert await page["overview"].verify_on_page()
+
+    run_async(playwright_event_loop, _ensure_logged_in())
 
 
 @given("the user is on the OpenShift login page")
@@ -48,6 +83,7 @@ def user_logs_in(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEv
     run_async(playwright_event_loop, _step())
 
 
+@given("Validate Pipelines button is visible in the left navigation bar")
 @when("Validate Pipelines button is visible in the left navigation bar")
 @then("Validate Pipelines button is visible in the left navigation bar")
 def validate_pipelines_button_visible(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
@@ -61,6 +97,7 @@ def validate_pipelines_button_visible(page: Dict[str, Any], playwright_event_loo
     )
 
 
+@given("the user clicks on Pipelines button")
 @when("the user clicks on Pipelines button")
 def user_navigates_to_pipelines_section(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
     """

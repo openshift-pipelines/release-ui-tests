@@ -5,10 +5,10 @@ from pytest_bdd import scenarios, then
 
 from framework.fixtures.async_bridge import run_async
 
-scenarios("pipelines_navigation.feature")
+scenarios("tasks_test.feature")
 
 
-@then("the Pipelines page should be visible")
+@then("the tasks page should be visible")
 def pipelines_page_visible(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
     """
     step for verifying that the Pipelines page is visible.

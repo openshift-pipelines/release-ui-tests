@@ -1,11 +1,13 @@
 import asyncio
+from collections.abc import AsyncGenerator
 from typing import Any, Dict
 
 import pytest
 import pytest_asyncio
-from playwright.async_api import Page
+from playwright.async_api import Browser, Page
 from pytest import FixtureRequest
 
+import framework.ui_components.overview_page as overview_page_module
 from framework.config.config import Config
 from framework.ui_components.commons.left_navigation_bar import LeftNavigationBar
 from framework.ui_components.commons.login_page import LoginPage
@@ -55,14 +57,49 @@ def browser_context_args(browser_context_args: Dict[str, Any], request: FixtureR
     }
 
 
-@pytest_asyncio.fixture
-async def page(page: Page, config: Config) -> Dict[str, Any]:
+@pytest.fixture(scope="module")
+def bdd_openshift_console_session() -> Dict[str, Any]:
+    """
+    Per-module (feature-registration module) state for BDD steps.
+    Used to run full OpenShift login only once per feature file when the Background step
+    ``the user is logged into openshift console with auth kube:admin`` is used.
+    """
+    return {"kube_admin_logged_in": False}
+
+
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def playwright_page(
+    browser: Browser,
+    browser_context_args: Dict[str, Any],
+) -> AsyncGenerator[Page, None]:
+    """
+    One Playwright Page (and its BrowserContext) per test module that registers scenarios.
+    Reuse the session ``browser`` from pytest-playwright-asyncio; isolate cookies/storage per feature
+    file by registering each ``.feature`` from its own step module (one ``scenarios(...)`` module
+    per feature is the supported layout).
+
+    Uses ``browser.new_context`` directly because the plugin's ``new_context`` fixture is
+    function-scoped and cannot be requested from module-scoped fixtures.
+    """
+    context = await browser.new_context(**browser_context_args)
+    pw_page = await context.new_page()
+    try:
+        yield pw_page
+    finally:
+        await context.close()
+
+
+@pytest_asyncio.fixture(scope="module", loop_scope="session")
+async def page(playwright_page: Page, config: Config) -> Dict[str, Any]:
     """
     fixture that injects custom application Page Objects.
+    Scoped to the test module so all scenarios from the same feature registration share one
+    browser context. Each module that calls ``scenarios()`` gets a new context.
+
     Sets default timeout for all page actions (click, fill, wait_for, etc.) and navigation
     operations (goto, reload, etc.) to use framework's configured timeout value (from APP_TIMEOUT
     env var, default 90000ms).
-    :param Page page: Raw page object
+    :param Page playwright_page: Raw Playwright page for this module's browser context.
     :param Config config: Config object containing application configuration
     :return: Dict[str, Any]: Dictionary containing:
         - "raw_page": The raw Page object for direct access if needed.
@@ -74,16 +111,18 @@ async def page(page: Page, config: Config) -> Dict[str, Any]:
         - "tasks": TasksPage instance for tasks page operations.
         - "triggers": TriggersPage instance for triggers page operations.
     """
-    page.set_default_timeout(config.timeout_ms)
-    page.context.set_default_navigation_timeout(config.timeout_ms)
+    overview_page_module._tour_skipped = False
+
+    playwright_page.set_default_timeout(config.timeout_ms)
+    playwright_page.context.set_default_navigation_timeout(config.timeout_ms)
 
     return {
-        "raw_page": page,
-        "login": LoginPage(page, config),
-        "nav": LeftNavigationBar(page, config),
-        "overview": OverViewPage(page, config),
-        "pipelines_overview": PipelinesOverViewPage(page, config),
-        "pipelines": PipelinesPage(page, config),
-        "tasks": TasksPage(page, config),
-        "triggers": TriggersPage(page, config),
+        "raw_page": playwright_page,
+        "login": LoginPage(playwright_page, config),
+        "nav": LeftNavigationBar(playwright_page, config),
+        "overview": OverViewPage(playwright_page, config),
+        "pipelines_overview": PipelinesOverViewPage(playwright_page, config),
+        "pipelines": PipelinesPage(playwright_page, config),
+        "tasks": TasksPage(playwright_page, config),
+        "triggers": TriggersPage(playwright_page, config),
     }
