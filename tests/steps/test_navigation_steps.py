@@ -32,11 +32,61 @@ def validate_pipelines_button_visible(page: Dict[str, Any], playwright_event_loo
 @when("the user clicks on Pipelines button")
 def user_navigates_to_pipelines_section(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
     """
-    step for navigating to the Pipelines section.
+    step for navigating to the Pipelines section (toggles without checking state).
     :param Dict[str, Any] page: Dictionary containing Page Object instances (from page fixture).
     :return: None: Raises TimeoutError if navigation elements are not clickable within the timeout.
     """
     assert run_async(playwright_event_loop, page["nav"].click_pipelines_button())
+
+
+@given("the user expands Pipelines in left navigation bar")
+@when("the user expands Pipelines in left navigation bar")
+def user_expands_pipelines_menu(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
+    """
+    Expands the Pipelines menu in left navigation bar if not already expanded.
+    Checks aria-expanded attribute of Pipelines button. If not expanded, clicks Pipelines button to expand.
+    If already expanded, does nothing.
+
+    :param Dict[str, Any] page: Dictionary containing Page Object instances (from page fixture).
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution.
+    :return: None
+    """
+
+    async def _step() -> None:
+        # Check if menu is already expanded using aria-expanded attribute
+        is_expanded = await page["nav"].is_pipelines_menu_expanded()
+
+        # If not expanded, click Pipelines button to expand
+        if not is_expanded:
+            await page["nav"].click_pipelines_button()
+            await page["raw_page"].wait_for_timeout(500)  # Wait for menu animation
+
+    run_async(playwright_event_loop, _step())
+
+
+@given("the user shrinks Pipelines in left navigation bar")
+@when("the user shrinks Pipelines in left navigation bar")
+def user_shrinks_pipelines_menu(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
+    """
+    Shrinks (collapses) the Pipelines menu in left navigation bar if currently expanded.
+    Checks aria-expanded attribute of Pipelines button. If expanded, clicks Pipelines button to shrink.
+    If already collapsed, does nothing.
+
+    :param Dict[str, Any] page: Dictionary containing Page Object instances (from page fixture).
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution.
+    :return: None
+    """
+
+    async def _step() -> None:
+        # Check if menu is expanded using aria-expanded attribute
+        is_expanded = await page["nav"].is_pipelines_menu_expanded()
+
+        # If expanded, click Pipelines button to shrink
+        if is_expanded:
+            await page["nav"].click_pipelines_button()
+            await page["raw_page"].wait_for_timeout(500)  # Wait for menu animation
+
+    run_async(playwright_event_loop, _step())
 
 
 @when("the user navigates to the Pipelines page")

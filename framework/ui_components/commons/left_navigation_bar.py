@@ -19,6 +19,18 @@ class LeftNavigationBar(BasePage):
         """
         return await self.is_visible(self.locators.PIPELINES_BUTTON)
 
+    async def is_pipelines_menu_expanded(self) -> bool:
+        """
+        Checks if the Pipelines menu is currently expanded by reading the aria-expanded attribute.
+        This is much faster than waiting for child elements to appear.
+        :return: bool: True if menu is expanded (aria-expanded="true"), False otherwise.
+        """
+        try:
+            aria_expanded = await self.page.get_attribute(self.locators.PIPELINES_BUTTON, "aria-expanded")
+            return aria_expanded == "true"
+        except Exception:
+            return False
+
     async def verify_link_available_under_pipelines_button(self, link_name: str) -> bool:
         """
         Verifies that a specific link is available under the Pipelines button in the left navigation bar.
@@ -43,26 +55,37 @@ class LeftNavigationBar(BasePage):
 
     async def click_pipelines_button(self) -> bool:
         """
-        Expand Pipelines sectoin by clicking the Pipelines button
-        Uses click_element() for both actions, which waits up to the configured timeout for elements
-        to be clickable. This is a two-step navigation process. Returns True only if both clicks succeed.
-        :return: bool: True if both navigation clicks succeed, False if any click fails or raises TimeoutError.
+        Clicks the Pipelines button to expand/collapse the submenu.
+
+        Uses fast click optimization since the Pipelines button is:
+        - Always visible in the navigation bar
+        - Static (doesn't animate or move)
+        - Doesn't trigger page navigation (just expands/collapses menu)
+
+        Performance: ~5s timeout vs 90s, no wait after click.
+
+        :return: bool: True if click succeeds, False if any click fails or raises TimeoutError.
         """
-        return await self.click_element(self.locators.PIPELINES_BUTTON)
+        return await self.click_element_fast(self.locators.PIPELINES_BUTTON)
 
     async def navigate_to_pipelines(self) -> bool:
         """
         Navigates to the Pipelines page by clicking on the Pipelines link.
-        Uses click_element() for both actions, which waits up to the configured timeout for elements
-        to be clickable. This is a two-step navigation process. Returns True only if both clicks succeed.
-        :return: bool: True if both navigation clicks succeed, False if any click fails or raises TimeoutError.
+
+        Uses standard click (not fast) because navigation links trigger page loads,
+        so we want Playwright's full actionability checks and navigation wait.
+
+        :return: bool: True if navigation click succeeds, False if click fails or raises TimeoutError.
         """
         return await self.click_element(self.locators.NAV_PIPELINES_LINK)
 
     async def navigate_to_overview(self) -> bool:
         """
         Navigates to the Pipelines Overview page by clicking on the Overview link.
-        Uses click_element() which waits up to the configured timeout for the element to be clickable.
+
+        Uses standard click (not fast) because navigation links trigger page loads,
+        so we want Playwright's full actionability checks and navigation wait.
+
         :return: bool: True if navigation click succeeds, False if click fails or raises TimeoutError.
         """
         return await self.click_element(self.locators.NAV_OVERVIEW_LINK)
@@ -70,7 +93,10 @@ class LeftNavigationBar(BasePage):
     async def navigate_to_tasks(self) -> bool:
         """
         Navigates to the Tasks page by clicking on the Tasks link.
-        Uses click_element() which waits up to the configured timeout for the element to be clickable.
+
+        Uses standard click (not fast) because navigation links trigger page loads,
+        so we want Playwright's full actionability checks and navigation wait.
+
         :return: bool: True if navigation click succeeds, False if click fails or raises TimeoutError.
         """
         return await self.click_element(self.locators.NAV_TASKS_LINK)
@@ -78,7 +104,10 @@ class LeftNavigationBar(BasePage):
     async def navigate_to_triggers(self) -> bool:
         """
         Navigates to the Triggers page by clicking on the Triggers link.
-        Uses click_element() which waits up to the configured timeout for the element to be clickable.
+
+        Uses standard click (not fast) because navigation links trigger page loads,
+        so we want Playwright's full actionability checks and navigation wait.
+
         :return: bool: True if navigation click succeeds, False if click fails or raises TimeoutError.
         """
         return await self.click_element(self.locators.NAV_TRIGGERS_LINK)

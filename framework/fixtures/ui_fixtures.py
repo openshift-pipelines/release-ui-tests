@@ -9,8 +9,13 @@ from pytest import FixtureRequest
 
 import framework.ui_components.overview_page as overview_page_module
 from framework.config.config import Config
+
+# Import CLI fixtures to make them available when tests import ui_fixtures
+from framework.fixtures.cli_fixtures import openshift_cli, test_project  # noqa: F401
+from framework.ui_components.commons.confirmation_modal import ConfirmationModal
 from framework.ui_components.commons.left_navigation_bar import LeftNavigationBar
 from framework.ui_components.commons.login_page import LoginPage
+from framework.ui_components.commons.project_selector import ProjectSelector
 from framework.ui_components.overview_page import OverViewPage
 from framework.ui_components.page_containers import PipelinesPages, TasksPages, TriggersPages
 
@@ -103,6 +108,8 @@ async def page(playwright_page: Page, config: Config) -> Dict[str, Any]:
         - "raw_page": The raw Page object for direct access if needed.
         - "login": LoginPage instance for login-related operations.
         - "nav": LeftNavigationBar instance for navigation operations.
+        - "modal": ConfirmationModal instance for modal interactions (delete confirmations, etc.).
+        - "project_selector": ProjectSelector instance for switching between projects.
         - "overview": OverViewPage instance for overview page operations.
         - "pipelines": PipelinesPages container with hierarchical structure:
             - pipelines.overview: Pipelines overview dashboard
@@ -154,6 +161,8 @@ async def page(playwright_page: Page, config: Config) -> Dict[str, Any]:
         "raw_page": playwright_page,
         "login": LoginPage(playwright_page, config),
         "nav": LeftNavigationBar(playwright_page, config),
+        "modal": ConfirmationModal(playwright_page, config),
+        "project_selector": ProjectSelector(playwright_page, config),
         "overview": OverViewPage(playwright_page, config),
         "pipelines": PipelinesPages(playwright_page, config),
         "tasks": TasksPages(playwright_page, config),

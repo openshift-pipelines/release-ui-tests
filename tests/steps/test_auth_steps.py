@@ -60,6 +60,42 @@ def user_logged_into_openshift_kube_admin(
     run_async(playwright_event_loop, _ensure_logged_in())
 
 
+@given("user switches to current project")
+@when("user switches to current project")
+def user_switches_to_current_project(
+    page: Dict[str, Any],
+    test_project: str,
+    playwright_event_loop: asyncio.AbstractEventLoop,
+) -> None:
+    """
+    Switches to the test project created for this feature file if not already on it.
+
+    Checks the current project from the project selector button. If already on the test
+    project, does nothing. If on a different project, switches to the test project.
+
+    This step should be called after navigating to a page where the project selector
+    is visible (e.g., Tasks, Pipelines, etc.).
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param str test_project: The test project name from CLI fixture (module-scoped)
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if project switch fails
+    """
+
+    async def _step() -> None:
+        # Check current project from the project selector button
+        current_project = await page["project_selector"].get_current_project()
+
+        # Only switch if we're not already on the test project
+        if current_project != test_project:
+            # Switch to the test project in the UI
+            project_switched = await page["project_selector"].select_project(test_project)
+            assert project_switched, f"Failed to switch to test project '{test_project}' in UI"
+        # else: already on the test project, continue
+
+    run_async(playwright_event_loop, _step())
+
+
 @given("the user is on the OpenShift login page")
 def user_on_login_page(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
     """

@@ -16,10 +16,15 @@ dist/
 # Agent logs files
 exec/
 
+# Environment files with secrets
+.env
+.env.*
+!.env.example
+
 # Ignore all files with the .md extension
 *.md
 
-# Exception for readme.md (the ! prefix negates the ignore rule)
+# Exception for documentation files (the ! prefix negates the ignore rule)
 !readme.md
 
 # temp files

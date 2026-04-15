@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: complex-task
+spec:
+  params:
+    - name: message
+      type: string
+      default: "Hello World"
+  steps:
+    - name: setup
+      image: registry.redhat.io/ubi9/ubi-minimal
+      script: |
+        #!/bin/bash
+        echo "Setting up environment..."
+
+    - name: execute
+      image: registry.redhat.io/ubi9/ubi-minimal
+      script: |
+        #!/bin/bash
+        echo "Executing main task: $(params.message)"
+
+    - name: cleanup
+      image: registry.redhat.io/ubi9/ubi-minimal
+      script: |
+        #!/bin/bash
+        echo "Cleaning up..."
