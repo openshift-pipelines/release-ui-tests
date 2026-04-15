@@ -1,5 +1,8 @@
 import logging
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 from framework.config.singleton import Singleton
 
@@ -35,13 +38,20 @@ class Config(object, metaclass=Singleton):
     def __init__(self) -> None:
         """
         Initializes the Config singleton instance by reading environment variables.
-        Priority: 1. Environment Variable, 2. Defaults (or None)
-        Reads CONSOLE_URL, CONSOLE_USERNAME, CONSOLE_PASSWORD, and APP_TIMEOUT from environment.
+        Priority: 1. Environment Variable, 2. .env file, 3. Defaults (or None)
+        Loads .env file from project root if it exists, then reads CONSOLE_URL, CONSOLE_USERNAME,
+        CONSOLE_PASSWORD, and APP_TIMEOUT from environment.
         Raises ValueError if any critical environment variables (CONSOLE_URL, CONSOLE_USERNAME,
         CONSOLE_PASSWORD) are missing.
         :return: None: Raises ValueError if required environment variables are missing.
         """
-        # Priority: 1. Environment Variable, 2. Defaults (or None)
+        # Load environment variables from .env file (if exists)
+        # Find project root (where .env should be located)
+        project_root = Path(__file__).parent.parent.parent
+        dotenv_path = project_root / ".env"
+        load_dotenv(dotenv_path=dotenv_path, override=False)  # Don't override existing env vars
+
+        # Priority: 1. Environment Variable, 2. .env file, 3. Defaults (or None)
         self._base_url = os.getenv("CONSOLE_URL")
         self._username = os.getenv("CONSOLE_USERNAME")
         self._password = os.getenv("CONSOLE_PASSWORD")

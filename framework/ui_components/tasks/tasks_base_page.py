@@ -76,6 +76,22 @@ class TasksBasePage(BasePage):
         """
         return await self.click_element(self.base_locators.CREATE_BUTTON)
 
+    async def click_create_task_menu_item(self) -> bool:
+        """
+        Clicks the 'Task' menu item from the Create dropdown.
+        Assumes the Create dropdown is already open.
+        :return: bool: True if click succeeds.
+        """
+        return await self.click_element(self.base_locators.CREATE_TASK_MENU_ITEM)
+
+    async def click_create_task_run_menu_item(self) -> bool:
+        """
+        Clicks the 'TaskRun' menu item from the Create dropdown.
+        Assumes the Create dropdown is already open.
+        :return: bool: True if click succeeds.
+        """
+        return await self.click_element(self.base_locators.CREATE_TASK_RUN_MENU_ITEM)
+
     async def click_create_task(self) -> bool:
         """
         Opens the Create dropdown and clicks 'Task' to navigate to the Create Task form.

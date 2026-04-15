@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: simple-pipeline
+spec:
+  tasks:
+    - name: greet
+      taskSpec:
+        steps:
+          - name: say-hello
+            image: registry.redhat.io/ubi9/ubi-minimal
+            script: |
+              #!/bin/bash
+              echo "Hello from pipeline!"

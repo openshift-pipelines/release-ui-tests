@@ -8,7 +8,7 @@ class TasksBasePageLocators:
     TASKS_HEADER = 'h1:has-text("Tasks")'
 
     # Create actions
-    CREATE_BUTTON = 'button:has-text("Create")'
+    CREATE_BUTTON = '[data-test="item-create"]'
     CREATE_TASK_MENU_ITEM = 'role=menuitem[name="Task"]'
     CREATE_TASK_RUN_MENU_ITEM = 'role=menuitem[name="TaskRun"]'
 
@@ -24,6 +24,8 @@ class TasksBasePageLocators:
 
     # Row actions
     KEBAB_MENU_BUTTON = 'button[aria-label="kebab menu"]'
+    EDIT_TASK_MENU_ITEM = 'role=menuitem[name="Edit Task"]'
+    DELETE_TASK_MENU_ITEM = 'role=menuitem[name="Delete Task"]'
 
     # Data load checks
     DATA_GRID = "table.ReactVirtualized__VirtualGrid"
@@ -38,6 +40,9 @@ class TasksPageLocators:
     NAMESPACE_COLUMN_HEADER = 'role=columnheader[name="Namespace"]'
     CREATED_COLUMN_HEADER = 'role=columnheader[name="Created"]'
     ACTIONS_COLUMN_HEADER = 'role=columnheader[name="Actions"]'
+
+    # Task row verification
+    TASK_ROW_BY_NAME = 'tr[data-test-rows="resource-row"]:has-text("{task_name}")'
 
 
 class TaskRunsPageLocators:

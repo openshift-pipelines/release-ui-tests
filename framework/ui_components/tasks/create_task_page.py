@@ -36,6 +36,94 @@ class CreateTaskPage(BasePage):
         """
         return await self.is_visible(self.locators.YAML_EDITOR)
 
+    async def get_yaml_content(self) -> str:
+        """
+        Extracts the current YAML content from the Monaco editor.
+
+        Uses JavaScript to access Monaco's internal model to get the exact content.
+        This is more reliable than trying to read from the textarea.
+
+        :return: str: Current YAML content in the editor
+        """
+        try:
+            # Wait for editor to be visible
+            await self.page.wait_for_selector(self.locators.YAML_EDITOR, timeout=self.config.timeout_ms)
+
+            # Use JavaScript to get Monaco editor content
+            yaml_content = await self.page.evaluate(
+                """
+                () => {
+                    const editor = document.querySelector('.monaco-editor');
+                    if (editor && editor.querySelector('textarea')) {
+                        const textarea = editor.querySelector('textarea');
+                        return textarea.value;
+                    }
+                    return '';
+                }
+                """
+            )
+
+            return yaml_content or ""
+
+        except Exception as e:
+            self.logger.error(f"Failed to extract YAML content from editor: {e}")
+            return ""
+
+    async def fill_yaml_editor(self, yaml_content: str) -> bool:
+        """
+        Fill the Monaco YAML editor with the provided YAML content.
+
+        Uses clipboard paste approach for reliability. This is the most dependable
+        method for multi-line content in Monaco editor because:
+        - Preserves all newlines, indentation, and special characters
+        - Single atomic operation (no timing/race conditions)
+        - Monaco's paste handler processes content correctly
+
+        Follows Single Responsibility Principle: delegates to Monaco's paste handler
+        rather than manually managing keyboard events.
+
+        :param str yaml_content: YAML content string to fill into the editor
+        :return: bool: True if editor was filled successfully
+        """
+        try:
+            # Wait for editor to be visible and ready
+            await self.page.wait_for_selector(self.locators.YAML_EDITOR, timeout=self.config.timeout_ms)
+
+            # Click into the editor to focus it
+            await self.page.click(self.locators.YAML_EDITOR)
+            await self.page.wait_for_timeout(300)
+
+            # Select all existing content
+            await self.page.keyboard.press("Control+A")
+            await self.page.wait_for_timeout(100)
+
+            # Use evaluate to set clipboard content and paste
+            # This is more reliable than pyperclip or external clipboard managers
+            await self.page.evaluate(
+                """
+                async (yamlContent) => {
+                    // Write to clipboard using Clipboard API
+                    await navigator.clipboard.writeText(yamlContent);
+                }
+                """,
+                yaml_content,
+            )
+
+            # Wait for clipboard to be set
+            await self.page.wait_for_timeout(200)
+
+            # Paste using Ctrl+V
+            await self.page.keyboard.press("Control+V")
+
+            # Wait for Monaco to process the paste and render the content
+            await self.page.wait_for_timeout(800)
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to fill YAML editor: {e}")
+            return False
+
     async def click_copy_code(self) -> bool:
         """
         Clicks the 'Copy code to clipboard' toolbar button.

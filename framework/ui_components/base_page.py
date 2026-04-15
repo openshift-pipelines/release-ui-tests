@@ -30,6 +30,39 @@ class BasePage:
             await loc.click()
         return True
 
+    async def click_element_fast(self, locator: str, timeout: int = 5000) -> bool:
+        """
+        Fast click optimized for stable, visible elements (e.g., navigation buttons).
+
+        Uses reduced timeout and skips some actionability checks for performance.
+        Best for elements that are:
+        - Already visible on page load
+        - Not animated or moving
+        - Stable navigation elements (sidebars, menus, etc.)
+
+        Performance optimizations:
+        - Shorter timeout (default 5s vs 90s)
+        - no_wait_after=True (doesn't wait for navigation/network)
+        - Force option available if needed
+
+        Follows Single Responsibility: optimized for fast, stable clicks only.
+
+        :param str locator: Element locator
+        :param int timeout: Timeout in milliseconds (default 5000ms = 5s)
+        :return: bool: True if click succeeds
+        """
+        try:
+            loc = self.page.locator(locator)
+            # Quick visibility check first with short timeout
+            await loc.wait_for(state="visible", timeout=timeout)
+
+            # Click with no_wait_after for speed (navigation elements don't need wait)
+            await loc.click(timeout=timeout, no_wait_after=True)
+            return True
+        except Exception:
+            # Fallback to regular click if fast click fails
+            return await self.click_element(locator, timeout=self.default_timeout)
+
     async def fill_input(self, locator: str, value: str, timeout: Optional[int] = None) -> bool:
         """
         Uses locator.fill(value) to fill an input element. Waits up to the specified timeout (or
