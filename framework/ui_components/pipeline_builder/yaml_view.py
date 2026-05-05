@@ -3,32 +3,25 @@ from playwright.async_api import Page
 from framework.config.config import Config
 from framework.locators.pipelines import YamlViewLocators
 from framework.ui_components.base_page import BasePage
+from framework.ui_components.commons.monaco_editor import MonacoEditor
 
 
 class YamlView(BasePage):
     """
     View object for Pipeline Builder's YAML editor interface.
     Handles YAML editor-specific UI elements and interactions.
+
+    Uses MonacoEditor component for reliable editor interactions following
+    the Composition pattern (composing MonacoEditor rather than duplicating logic).
     """
 
     def __init__(self, page: Page, config: Config) -> None:
         super().__init__(page, config)
         self.locators = YamlViewLocators()
-
-    async def fill_yaml_editor(self, yaml_content: str) -> bool:
-        """
-        Fills the YAML editor with the provided YAML content.
-        :param str yaml_content: The YAML content to insert.
-        :return: bool: True if fill succeeds.
-        """
-        return await self.fill_input(self.locators.YAML_EDITOR, yaml_content)
-
-    async def get_yaml_content(self) -> str:
-        """
-        Gets the current content from the YAML editor.
-        :return: str: The YAML content from the editor.
-        """
-        return await self.get_element_text(self.locators.YAML_EDITOR)
+        # Compose MonacoEditor component for editor interactions
+        # Pipeline Builder may not set data-test="code-editor" immediately after view switch,
+        # so we use the .monaco-editor selector as a more reliable wait target
+        self.monaco_editor = MonacoEditor(page, config, custom_selector=self.locators.YAML_EDITOR)
 
     async def click_sidebar_close(self) -> bool:
         """

@@ -55,8 +55,8 @@ def create_task_from_yaml(
         # Wait for Create Task page to load
         await page["raw_page"].wait_for_timeout(1000)
 
-        # Fill YAML editor
-        yaml_filled = await page["tasks"].create.fill_yaml_editor(yaml_content)
+        # Fill YAML editor using MonacoEditor component directly
+        yaml_filled = await page["tasks"].create.monaco_editor.set_content(yaml_content)
         assert yaml_filled, f"Failed to fill YAML editor with content from '{yaml_file}'"
 
         # Click Create button to submit
@@ -179,9 +179,23 @@ def edit_task_yaml(
         on_yaml_page = await page["tasks"].task.yaml.verify_on_page()
         assert on_yaml_page, f"Failed to navigate to YAML editor for task '{task_name}'"
 
+        # Wait for YAML editor to fully load and populate with existing content
+        await page["raw_page"].wait_for_timeout(5000)
+
         # Extract existing YAML content from editor (BEFORE clearing it)
         # This contains Kubernetes-generated fields like resourceVersion, uid, etc.
-        existing_yaml = await page["tasks"].task.yaml.get_yaml_content()
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        existing_yaml = await page["tasks"].task.yaml.monaco_editor.get_content()
+
+        # Log extracted content for debugging
+        logger.info(f"Extracted YAML content length: {len(existing_yaml)} characters")
+        if existing_yaml:
+            # Log first 200 chars to verify it's the right content
+            logger.debug(f"YAML preview: {existing_yaml[:200]}...")
+
         assert existing_yaml, f"Failed to extract existing YAML for task '{task_name}'"
 
         # Define fields to preserve from existing YAML
@@ -191,13 +205,33 @@ def edit_task_yaml(
             "metadata.uid",
         ]
 
-        # Extract field values from existing YAML and replace placeholders in new YAML
-        updated_yaml_content = YamlFieldExtractor.extract_and_replace(
-            existing_yaml, updated_yaml_template, fields_to_preserve
+        # Extract field values from existing YAML
+        extracted_values = YamlFieldExtractor.get_multiple_fields(existing_yaml, fields_to_preserve)
+
+        # Log extracted values for debugging
+        logger.info(f"Extracted values from existing task YAML: {extracted_values}")
+
+        # Verify extraction succeeded
+        assert extracted_values, (
+            f"Failed to extract required fields {fields_to_preserve} from existing YAML. "
+            "Ensure the task exists and has been persisted by Kubernetes."
         )
 
+        # Replace placeholders in new YAML with extracted values
+        updated_yaml_content = YamlFieldExtractor.replace_placeholders(updated_yaml_template, extracted_values)
+
+        # Verify placeholders were replaced
+        for field_path in fields_to_preserve:
+            placeholder = f"{{{{{field_path}}}}}"
+            assert placeholder not in updated_yaml_content, (
+                f"Placeholder '{placeholder}' was not replaced in updated YAML. "
+                f"Ensure template has correct placeholder format and extraction succeeded."
+            )
+
+        logger.info(f"Successfully replaced {len(extracted_values)} placeholders in updated YAML")
+
         # Fill YAML editor with updated content (with preserved fields)
-        yaml_filled = await page["tasks"].task.yaml.fill_yaml_editor(updated_yaml_content)
+        yaml_filled = await page["tasks"].task.yaml.monaco_editor.set_content(updated_yaml_content)
         assert yaml_filled, f"Failed to fill YAML editor with content from '{updated_yaml_file}'"
 
         # Click Save button

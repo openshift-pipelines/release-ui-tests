@@ -56,6 +56,9 @@ class PipelinesPageLocators:
     EDIT_PIPELINE_MENU_ITEM = 'role=menuitem[name="Edit Pipeline"]'
     DELETE_PIPELINE_MENU_ITEM = 'role=menuitem[name="Delete Pipeline"]'
 
+    # Pipeline row verification
+    PIPELINE_ROW_BY_NAME = 'tr[data-test-rows="resource-row"]:has-text("{pipeline_name}")'
+
 
 class PipelineRunsPageLocators:
     """Locators specific to the PipelineRuns tab"""
@@ -71,6 +74,11 @@ class PipelineRunsPageLocators:
 
     # PipelineRun-specific actions
     VIEW_LOGS_BUTTON = 'button:has-text("View logs")'
+
+    # Row verification and actions
+    PIPELINERUN_ROW_BY_NAME = 'tr[data-test-rows="resource-row"]:has-text("{pipelinerun_name}")'
+    PIPELINERUN_STATUS_CELL = 'tr:has-text("{pipelinerun_name}") td.pf-v5-c-table__td:nth-child(3)'
+    DELETE_PIPELINERUN_MENU_ITEM = 'role=menuitem[name="Delete PipelineRun"]'
 
 
 class RepositoriesPageLocators:
@@ -93,6 +101,7 @@ class PipelineBuilderPageLocators:
 
     # Form actions (common to both views)
     CREATE_BUTTON = 'button:has-text("Create")'
+    SAVE_BUTTON = 'button:has-text("Save")'
     CANCEL_BUTTON = 'button:has-text("Cancel")'
 
 
@@ -122,9 +131,9 @@ class BuilderViewLocators:
 class YamlViewLocators:
     """Locators specific to the Pipeline Builder's YAML editor view."""
 
-    # YAML editor
-    YAML_EDITOR = 'textbox[aria-label*="Editor content"]'
-    YAML_EDITOR_CONTAINER = ".monaco-editor"
+    # YAML editor (Monaco editor)
+    YAML_EDITOR = ".monaco-editor"
+    YAML_EDITOR_MOUNTED = '[data-test="code-editor"]'
 
     # Sidebar panel
     SIDEBAR_CLOSE_BUTTON = 'button:has-text("Close")'

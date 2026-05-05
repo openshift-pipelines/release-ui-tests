@@ -1,71 +1,70 @@
 from playwright.async_api import Page
 
 from framework.config.config import Config
-from framework.locators.tasks import TaskYamlPageLocators
+from framework.locators.tasks import TaskRunYamlPageLocators
 from framework.ui_components.base_page import BasePage
-from framework.ui_components.commons.actions_menu import ActionsMenu
 from framework.ui_components.commons.favorites import Favorites
 from framework.ui_components.commons.monaco_editor import MonacoEditor
 from framework.ui_components.commons.project_selector import ProjectSelector
-from framework.ui_components.console_url_patterns import TASK_YAML_URL
 
 
-class TaskYamlPage(BasePage):
-    """Page object for the Task YAML editor tab."""
+class TaskRunYamlPage(BasePage):
+    """Page object for the TaskRun YAML editor tab."""
 
     def __init__(self, page: Page, config: Config) -> None:
         super().__init__(page, config)
-        self.locators = TaskYamlPageLocators()
+        self.locators = TaskRunYamlPageLocators()
         self.project_selector = ProjectSelector(page, config)
         self.favorites = Favorites(page, config)
-        self.actions_menu = ActionsMenu(page, config)
         # Compose MonacoEditor component for editor interactions
         self.monaco_editor = MonacoEditor(page, config)
 
     async def verify_on_page(self) -> bool:
         """
-        Verifies that the Task YAML tab is currently displayed by checking URL and
-        YAML editor visibility.
-        :return: bool: True if URL matches and YAML editor is visible.
-        :raises AssertionError: With specific message if URL or editor check fails.
-        :raises TimeoutError: If URL doesn't match within the timeout.
-        """
-        return await self._verify_page_regex(TASK_YAML_URL, self.locators.YAML_EDITOR, "Task YAML page")
+        Verifies that the TaskRun YAML page is currently displayed.
+        Checks if the URL contains the TaskRun resource path with /yaml and verifies YAML tab is active.
 
-    async def get_task_name(self) -> str:
+        :return: bool: True if on TaskRun YAML page
         """
-        Returns the task name displayed in the h1 heading.
-        :return: str: The text content of the task name heading.
+        return await self.wait_for_url_to_contain("tekton.dev~v1~TaskRun") and await self.is_visible(
+            self.locators.YAML_EDITOR
+        )
+
+    async def get_taskrun_name(self) -> str:
         """
-        return await self.page.locator(self.locators.TASK_NAME_HEADING).inner_text()
+        Extracts the TaskRun name from the page heading.
+
+        :return: str: TaskRun name displayed in the heading
+        """
+        try:
+            return await self.page.text_content(self.locators.TASKRUN_NAME_HEADING) or ""
+        except Exception as e:
+            self.logger.error(f"Failed to get TaskRun name: {e}")
+            return ""
+
+    async def click_breadcrumb_taskruns(self) -> bool:
+        """
+        Clicks the 'TaskRuns' link in the breadcrumb to navigate back to TaskRuns list.
+
+        :return: bool: True if click succeeds
+        """
+        return await self.click_element(self.locators.BREADCRUMB_TASKRUNS_LINK)
 
     async def navigate_to_details_tab(self) -> bool:
         """
-        Switches to the Details tab.
-        :return: bool: True if tab click succeeds.
+        Navigates to the Details tab.
+
+        :return: bool: True if tab click succeeds
         """
         return await self.click_element(self.locators.DETAILS_TAB)
 
     async def navigate_to_yaml_tab(self) -> bool:
         """
-        Switches to the YAML tab.
-        :return: bool: True if tab click succeeds.
+        Navigates to the YAML tab.
+
+        :return: bool: True if tab click succeeds
         """
         return await self.click_element(self.locators.YAML_TAB)
-
-    async def click_breadcrumb_tasks(self) -> bool:
-        """
-        Clicks the 'Tasks' breadcrumb link to navigate back to the Tasks list page.
-        :return: bool: True if click succeeds.
-        """
-        return await self.click_element(self.locators.BREADCRUMB_TASKS_LINK)
-
-    async def is_yaml_editor_visible(self) -> bool:
-        """
-        Checks whether the Monaco YAML editor is visible on the page.
-        :return: bool: True if the editor is visible, False otherwise.
-        """
-        return await self.is_visible(self.locators.YAML_EDITOR)
 
     async def click_copy_code(self) -> bool:
         """
@@ -104,28 +103,35 @@ class TaskYamlPage(BasePage):
 
     async def click_save(self) -> bool:
         """
-        Clicks the 'Save' button to save the YAML changes.
+        Clicks the 'Save' button to save changes to the YAML.
         :return: bool: True if click succeeds.
         """
         return await self.click_element(self.locators.SAVE_BUTTON)
 
     async def click_reload(self) -> bool:
         """
-        Clicks the 'Reload' button to discard local edits and reload the YAML from the server.
+        Clicks the 'Reload' button to reload the YAML from the server.
         :return: bool: True if click succeeds.
         """
         return await self.click_element(self.locators.RELOAD_BUTTON)
 
     async def click_cancel(self) -> bool:
         """
-        Clicks the 'Cancel' button to discard changes and navigate back.
+        Clicks the 'Cancel' button to discard changes.
         :return: bool: True if click succeeds.
         """
         return await self.click_element(self.locators.CANCEL_BUTTON)
 
     async def click_download(self) -> bool:
         """
-        Clicks the 'Download' button to download the current YAML content as a file.
+        Clicks the 'Download' button to download the YAML as a file.
         :return: bool: True if click succeeds.
         """
         return await self.click_element(self.locators.DOWNLOAD_BUTTON)
+
+    async def is_yaml_editor_visible(self) -> bool:
+        """
+        Checks whether the Monaco YAML editor is visible on the page.
+        :return: bool: True if the editor is visible, False otherwise.
+        """
+        return await self.is_visible(self.locators.YAML_EDITOR)

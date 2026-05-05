@@ -8,10 +8,35 @@ Handles project creation, deletion, and management for test isolation.
 import asyncio
 import logging
 import random
+import re
 import string
 from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+
+def derive_api_url_from_console_url(console_url: str) -> Optional[str]:
+    """
+    Derive OpenShift API URL from Console URL.
+
+    Console URL format: https://console-openshift-console.apps.<cluster-domain>
+    API URL format: https://api.<cluster-domain>:6443
+
+    :param str console_url: Console URL (e.g., https://console-openshift-console.apps.example.com)
+    :return: Optional[str]: Derived API URL or None if pattern doesn't match
+    """
+    # Extract cluster domain from console URL
+    # Pattern: https://console-openshift-console.apps.<cluster-domain>
+    match = re.search(r"https?://console-openshift-console\.apps\.(.+)", console_url)
+
+    if match:
+        cluster_domain = match.group(1)
+        api_url = f"https://api.{cluster_domain}:6443"
+        logger.info(f"Derived API URL from console URL: {api_url}")
+        return api_url
+    else:
+        logger.warning(f"Could not derive API URL from console URL: {console_url}")
+        return None
 
 
 class OpenShiftCLI:
@@ -81,6 +106,38 @@ class OpenShiftCLI:
             return True
         except RuntimeError as e:
             logger.error(f"Login failed: {e}")
+            return False
+
+    async def login_with_credentials(self, api_url: str, username: str, password: str) -> bool:
+        """
+        Login to OpenShift cluster using username and password.
+
+        :param str api_url: OpenShift API URL (e.g., https://api.cluster.example.com:6443)
+        :param str username: Username for authentication
+        :param str password: Password for authentication
+        :return: bool: True if login successful, False otherwise
+        """
+        if not api_url or not username or not password:
+            logger.error("API URL, username, and password are required for login")
+            return False
+
+        try:
+            command = [
+                "oc",
+                "login",
+                api_url,
+                "--username",
+                username,
+                "--password",
+                password,
+                "--insecure-skip-tls-verify=true",
+            ]
+            exit_code, stdout, stderr = await self._run_command(command, check=True)
+            self._logged_in = True
+            logger.info(f"Successfully logged in to {api_url} as {username}")
+            return True
+        except RuntimeError as e:
+            logger.error(f"Login with credentials failed: {e}")
             return False
 
     async def is_logged_in(self) -> bool:
@@ -193,3 +250,40 @@ class OpenShiftCLI:
         # Generate 5 random lowercase alphanumeric characters
         suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=5))
         return f"{prefix}-{suffix}"
+
+    async def apply_yaml(self, yaml_content: str, namespace: Optional[str] = None) -> bool:
+        """
+        Apply YAML content to the cluster using oc apply.
+
+        :param str yaml_content: YAML content to apply
+        :param Optional[str] namespace: Namespace to apply the resource to (uses current if not specified)
+        :return: bool: True if apply successful, False otherwise
+        """
+        import os
+        import tempfile
+
+        try:
+            # Create a temporary file to hold the YAML content
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as tmp_file:
+                tmp_file.write(yaml_content)
+                tmp_file_path = tmp_file.name
+
+            # Build the oc apply command
+            command = ["oc", "apply", "-f", tmp_file_path]
+            if namespace:
+                command.extend(["-n", namespace])
+
+            # Execute the command
+            exit_code, stdout, stderr = await self._run_command(command, check=True)
+            logger.info("Successfully applied YAML content")
+            logger.debug(f"STDOUT: {stdout}")
+
+            return True
+        except RuntimeError as e:
+            logger.error(f"Failed to apply YAML: {e}")
+            return False
+        finally:
+            # Clean up the temporary file
+            if "tmp_file_path" in locals() and os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
+                logger.debug(f"Removed temporary file: {tmp_file_path}")

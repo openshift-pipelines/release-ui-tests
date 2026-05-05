@@ -5,16 +5,90 @@ Provides pytest fixtures for OpenShift CLI operations, including:
 - Isolated test project creation per feature file
 - Automatic project cleanup on test completion
 - CLI authentication and context management
+
+Configuration Loading:
+- Environment variables are loaded from .env file at module import time
+- Priority: 1. Environment Variable (CI), 2. .env file (local dev), 3. Defaults
+- This ensures consistent behavior between local development and CI environments
 """
 
 import logging
 import os
+from pathlib import Path
+from typing import Generator
 
 import pytest
+from _pytest.nodes import Item
+from _pytest.runner import CallInfo
+from dotenv import load_dotenv
 
-from framework.cli.openshift_cli import OpenShiftCLI
+from framework.cli.openshift_cli import OpenShiftCLI, derive_api_url_from_console_url
+from framework.config.config import Config
 
 logger = logging.getLogger(__name__)
+
+# Load .env file at module level to ensure configuration is available before fixtures run
+# This happens once when the module is first imported
+# Note: override=False means environment variables take precedence over .env file
+project_root = Path(__file__).parent.parent.parent
+dotenv_path = project_root / ".env"
+load_dotenv(dotenv_path=dotenv_path, override=False)
+
+# Flag to track if CLI login has been performed in this test session
+# Avoids redundant login checks across multiple test modules
+_cli_logged_in = False
+
+
+async def _perform_cli_login(openshift_cli: OpenShiftCLI) -> None:
+    """
+    Perform CLI login using available credentials.
+
+    Tries token-based login first, then falls back to username/password.
+
+    :param OpenShiftCLI openshift_cli: CLI wrapper instance
+    :raises RuntimeError: If login fails
+    """
+    logger.info("Not currently logged in to OpenShift cluster - attempting login")
+
+    # Try method 1: Login with token (if OC_TOKEN and OC_API_URL are set)
+    if openshift_cli.token and openshift_cli.api_url:
+        logger.info("Attempting login with OC_TOKEN")
+        login_success = await openshift_cli.login()
+        if login_success:
+            logger.info("Successfully logged in with token")
+        else:
+            raise RuntimeError("Login with token failed. Check OC_TOKEN and OC_API_URL values")
+        return
+
+    # Try method 2: Login with username/password (from Config/env vars)
+    logger.info("OC_TOKEN not set - attempting login with username/password from Config")
+    try:
+        config = Config()
+
+        # Derive API URL from console URL
+        api_url = derive_api_url_from_console_url(config.base_url)
+
+        if not api_url:
+            raise RuntimeError(
+                f"Could not derive API URL from console URL: {config.base_url}. "
+                "Set OC_API_URL environment variable explicitly."
+            )
+
+        logger.info(f"Using API URL: {api_url}")
+        login_success = await openshift_cli.login_with_credentials(
+            api_url=api_url, username=config.username, password=config.password
+        )
+
+        if login_success:
+            logger.info(f"Successfully logged in as {config.username}")
+        else:
+            raise RuntimeError("Login with username/password failed. Check CONSOLE_USERNAME and CONSOLE_PASSWORD")
+
+    except ValueError as e:
+        raise RuntimeError(
+            f"Cannot login to OpenShift cluster. Missing configuration: {e}. "
+            "Set OC_TOKEN + OC_API_URL OR CONSOLE_USERNAME + CONSOLE_PASSWORD + CONSOLE_URL"
+        ) from e
 
 
 @pytest.fixture(scope="session")
@@ -37,7 +111,7 @@ def openshift_cli() -> OpenShiftCLI:
 
 
 @pytest.fixture(scope="module")
-async def test_project(openshift_cli: OpenShiftCLI, request) -> str:
+async def test_project(openshift_cli: OpenShiftCLI, request: pytest.FixtureRequest) -> str:
     """
     Module-scoped fixture that creates an isolated project for each feature file.
 
@@ -45,28 +119,26 @@ async def test_project(openshift_cli: OpenShiftCLI, request) -> str:
     Yields the project name for use in tests.
     Automatically deletes the project after tests complete (only if all tests passed).
 
+    Uses a session-level flag to ensure login only happens once across all test modules,
+    avoiding redundant login checks and improving test execution speed.
+
     :param OpenShiftCLI openshift_cli: CLI wrapper instance
-    :param request: pytest request object for accessing test metadata
+    :param pytest.FixtureRequest request: pytest request object for accessing test metadata
     :return: str: The created project name
     :raises: RuntimeError if project creation fails
     """
-    # Ensure we're logged in (either via token or previous oc login)
-    is_logged_in = await openshift_cli.is_logged_in()
+    global _cli_logged_in
 
-    if not is_logged_in:
-        # Try to login with token if available
-        if openshift_cli.token and openshift_cli.api_url:
-            login_success = await openshift_cli.login()
-            if not login_success:
-                raise RuntimeError(
-                    "Not logged into OpenShift cluster. "
-                    "Either run 'oc login' manually or set OC_TOKEN and OC_API_URL env vars"
-                )
-        else:
-            raise RuntimeError(
-                "Not logged into OpenShift cluster and no token/API URL provided. "
-                "Run 'oc login' or set OC_TOKEN and OC_API_URL environment variables"
-            )
+    # Check session-level login flag first to avoid redundant login checks
+    if not _cli_logged_in:
+        logger.info("First test module - checking CLI login status")
+        await _perform_cli_login(openshift_cli)
+    else:
+        logger.info("Already logged in to OpenShift cluster")
+
+    # Mark login as complete for this session
+    _cli_logged_in = True
+    logger.info("CLI login status confirmed - subsequent modules will skip login check")
 
     # Generate unique project name
     project_name = openshift_cli.generate_random_project_name()
@@ -117,12 +189,16 @@ async def test_project(openshift_cli: OpenShiftCLI, request) -> str:
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
+def pytest_runtest_makereport(item: Item, call: CallInfo[None]) -> Generator[None, None, None]:
     """
     Hook to capture test results for project cleanup decision.
 
     Attaches test result to the request node so test_project fixture
     can check if tests failed before deciding to delete the project.
+
+    :param Item item: The test item being executed
+    :param CallInfo call: Information about the call phase
+    :return: Generator for hook wrapper
     """
     outcome = yield
     rep = outcome.get_result()

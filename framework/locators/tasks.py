@@ -13,7 +13,7 @@ class TasksBasePageLocators:
     CREATE_TASK_RUN_MENU_ITEM = 'role=menuitem[name="TaskRun"]'
 
     # Tab navigation
-    TASKS_TAB = 'a[href^="/tasks/all-namespaces"],a[href^="/tasks/ns/"]'
+    TASKS_TAB = 'a[href^="/tasks/all-namespaces"], a[href^="/tasks/ns/"]'
     TASK_RUNS_TAB = 'a[href^="/tasks/all-namespaces/"][href$="/task-runs"], a[href^="/tasks/ns/"][href$="/task-runs"]'
 
     # Search/Filter toolbar
@@ -56,6 +56,10 @@ class TaskRunsPageLocators:
     STATUS_COLUMN_HEADER = 'role=columnheader[name="Status"]'
     STARTED_COLUMN_HEADER = 'role=columnheader[name="Started"]'
     ACTIONS_COLUMN_HEADER = 'role=columnheader[name="Actions"]'
+
+    DELETE_TASKRUN_MENU_ITEM = 'role=menuitem[name="Delete TaskRun"]'
+    # TaskRun row verification
+    TASKRUN_ROW_BY_NAME = 'tr[data-test-rows="resource-row"]:has-text("{taskrun_name}")'
 
 
 class CreateTaskPageLocators:
@@ -114,6 +118,84 @@ class TaskYamlPageLocators:
 
     # Page header
     TASK_NAME_HEADING = "h1"
+
+    # Tabs
+    DETAILS_TAB = 'role=tab[name="Details"]'
+    YAML_TAB = 'role=tab[name="YAML"]'
+
+    # YAML editor
+    YAML_EDITOR = ".monaco-editor"
+
+    # Editor toolbar
+    COPY_CODE_BUTTON = 'button[aria-label="Copy code to clipboard"]'
+    EDITOR_SETTINGS_BUTTON = 'button[aria-label="Editor settings"]'
+    TOGGLE_FULLSCREEN_BUTTON = 'button[aria-label="Toggle fullscreen mode"]'
+    TOGGLE_SIDEBAR_BUTTON = 'button[aria-label="Show sidebar"], button[aria-label="Hide sidebar"]'
+    SHORTCUTS_BUTTON = 'button:has-text("Shortcuts")'
+
+    # Action buttons
+    SAVE_BUTTON = 'button:has-text("Save")'
+    RELOAD_BUTTON = 'button:has-text("Reload")'
+    CANCEL_BUTTON = 'button:has-text("Cancel")'
+    DOWNLOAD_BUTTON = 'button:has-text("Download")'
+
+
+class CreateTaskRunPageLocators:
+    """Locators for the Create TaskRun YAML Editor Page"""
+
+    # Page header
+    CREATE_TASKRUN_HEADER = 'h1:has-text("Create TaskRun")'
+
+    # YAML editor
+    YAML_EDITOR = ".monaco-editor"
+
+    # Editor toolbar
+    COPY_CODE_BUTTON = 'button[aria-label="Copy code to clipboard"]'
+    EDITOR_SETTINGS_BUTTON = 'button[aria-label="Editor settings"]'
+    TOGGLE_FULLSCREEN_BUTTON = 'button[aria-label="Toggle fullscreen mode"]'
+    TOGGLE_SIDEBAR_BUTTON = 'button[aria-label="Hide sidebar"]'
+    SHORTCUTS_BUTTON = 'button:has-text("Shortcuts")'
+
+    # Action buttons
+    SAVE_CHANGES_BUTTON = '[data-test="save-changes"]'
+    CANCEL_BUTTON = '[data-test="cancel"]'
+    DOWNLOAD_BUTTON = 'button:has-text("Download")'
+
+    # Schema sidebar
+    SCHEMA_SIDEBAR_HEADING = 'h2:has-text("TaskRun")'
+    CLOSE_SIDEBAR_BUTTON = 'button[aria-label="Close"]'
+    SCHEMA_TAB = 'role=tab[name="Schema"]'
+
+
+class TaskRunDetailsPageLocators:
+    """Locators for the TaskRun Details page"""
+
+    # Breadcrumb
+    BREADCRUMB_TASKRUNS_LINK = 'nav[aria-label="Breadcrumb"] a:has-text("TaskRuns")'
+    BREADCRUMB_TASKRUN_DETAILS_LINK = 'nav[aria-label="Breadcrumb"] a:has-text("TaskRun details")'
+
+    # Page header
+    TASKRUN_NAME_HEADING = "div.taskrun-details-page"
+
+    # Tabs
+    DETAILS_TAB = 'role=tab[name="Details"]'
+    YAML_TAB = 'role=tab[name="YAML"]'
+
+    # Details section
+    TASKRUN_DETAILS_HEADING = 'h2:has-text("TaskRun details")'
+    NAMESPACE_LINK = 'a[href^="/k8s/cluster/namespaces/"]'
+    STATUS_LABEL = 'dt:has-text("Status")'
+    TASK_LINK = 'dt:has-text("Task") + dd a'
+
+
+class TaskRunYamlPageLocators:
+    """Locators for the TaskRun YAML editor tab"""
+
+    # Breadcrumb
+    BREADCRUMB_TASKRUNS_LINK = 'nav[aria-label="Breadcrumb"] a:has-text("TaskRuns")'
+
+    # Page header
+    TASKRUN_NAME_HEADING = "h1"
 
     # Tabs
     DETAILS_TAB = 'role=tab[name="Details"]'

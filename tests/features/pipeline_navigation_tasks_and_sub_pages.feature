@@ -3,7 +3,7 @@ Feature: Validate User is able to navigate to Tasks, TaskRuns Pages & underlying
   Background:
     Given the user is logged into openshift console with auth kube:admin
 
-  @smoke @sanity
+  @smoke
   Scenario: Verify successful navigation to Tasks page and Sub Tabs
     Given Validate Pipelines button is visible in the left navigation bar
     And the user clicks on Pipelines button

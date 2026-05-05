@@ -121,3 +121,50 @@ class PipelinesPage(PipelinesBasePage):
         :return: bool: True if data loads successfully or "no data" message is shown.
         """
         return await self.verify_data_load(tab_name="Pipelines tab")
+
+    async def click_create_pipeline_menu_item(self) -> bool:
+        """
+        Click 'Pipeline' menu item from Create dropdown.
+        Assumes Create dropdown is already open.
+        :return: bool: True if click succeeds.
+        """
+        return await self.click_element(self.base_locators.CREATE_PIPELINE_MENU_ITEM)
+
+    async def verify_pipeline_in_list(self, pipeline_name: str) -> bool:
+        """
+        Verify that a pipeline with the given name appears in the pipelines list.
+        :param str pipeline_name: Name of the pipeline to verify
+        :return: bool: True if pipeline row is visible
+        """
+        locator = self.locators.PIPELINE_ROW_BY_NAME.format(pipeline_name=pipeline_name)
+        return await self.is_visible(locator, timeout=5000)
+
+    async def verify_pipeline_not_in_list(self, pipeline_name: str) -> bool:
+        """
+        Verify that a pipeline with the given name does NOT appear in the pipelines list.
+        :param str pipeline_name: Name of the pipeline to verify absence
+        :return: bool: True if pipeline row is NOT visible
+        """
+        locator = self.locators.PIPELINE_ROW_BY_NAME.format(pipeline_name=pipeline_name)
+        return not await self.is_visible(locator, timeout=5000)
+
+    async def click_pipeline_kebab_menu(self, pipeline_name: str) -> bool:
+        """
+        Click the kebab menu for a specific pipeline row.
+        :param str pipeline_name: Name of the pipeline
+        :return: bool: True if kebab menu click succeeds
+        """
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        try:
+            # Find the row containing the pipeline name
+            row_locator = self.locators.PIPELINE_ROW_BY_NAME.format(pipeline_name=pipeline_name)
+
+            # Within that row, find and click the kebab menu button
+            kebab_in_row = f"{row_locator} >> {self.base_locators.KEBAB_MENU_BUTTON}"
+            return await self.click_element(kebab_in_row)
+        except Exception as e:
+            logger.error(f"Failed to click kebab menu for pipeline '{pipeline_name}': {e}")
+            return False

@@ -112,13 +112,74 @@ playwright install --with-deps
 playwright install
 ```
 
+## Configuration
+
+Before running tests, you need to configure the framework with your OpenShift cluster details.
+
+### Quick Setup (Local Development)
+
+1. **Copy the configuration template:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edit `.env` with your cluster details:**
+   ```bash
+   # Required
+   CONSOLE_URL=https://console-openshift-console.apps.your-cluster.com
+   CONSOLE_USERNAME=kubeadmin
+   CONSOLE_PASSWORD=your-password
+
+   # Optional
+   APP_TIMEOUT=90000
+   ```
+
+3. **Run tests:**
+   ```bash
+   pytest tests/features/task_crud_operations.feature
+   ```
+
+### Configuration Priority
+
+The framework uses the **12-Factor App** methodology for configuration:
+
+```
+Environment Variables (CI) → .env file (local) → Defaults
+     HIGHEST PRIORITY                              LOWEST
+```
+
+**For detailed configuration instructions**, including CI/CD setup, authentication methods, and troubleshooting, see:
+
+📖 **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)**
+
 ## Executing tests
+
 ### Execution using pytest
- - Make sure to have an env deployed by one of the following options:
-   - Deploy a test env from the following  [pipeline](WIP)
- - Open run configuration (of your test)
-   - Add env variable to the execution `export CONSOLE_USERNAME=<username of env Ex:kubeadmin>; export CONSOLE_PASSWORD=<password of your env>; export CONSOLE_URL=<console url of your env Ex:https://console-openshift-console.apps.test.redhat.com>`
- - To execute using several marks use the following structure: `pytest -m "mark1 and mark2"`.
+
+**Basic execution:**
+```bash
+# Run single feature file
+pytest tests/features/task_crud_operations.feature
+
+# Run with specific marks
+pytest -m "smoke"
+pytest -m "smoke and sanity"
+
+# Run in headed mode (visible browser)
+pytest tests/features/task_crud_operations.feature --headed
+```
+
+**Advanced execution:**
+```bash
+# Run with specific markers
+pytest -m "mark1 and mark2"
+
+# Run with verbose output
+pytest tests/features/ -v
+
+# Run specific scenario by line number
+pytest tests/features/task_crud_operations.feature::10
+```
 
 
 ### Contribution guidelines ###

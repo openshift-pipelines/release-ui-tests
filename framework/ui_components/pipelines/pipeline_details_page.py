@@ -125,4 +125,4 @@ class PipelineDetailsPage(BasePage):
         Gets the pipeline name from the page heading.
         :return: str: The pipeline name.
         """
-        return await self.get_element_text(self.locators.PIPELINE_NAME_HEADING)
+        return await self.page.locator(self.locators.PIPELINE_NAME_HEADING).inner_text()

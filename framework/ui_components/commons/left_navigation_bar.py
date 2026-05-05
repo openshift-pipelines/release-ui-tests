@@ -25,10 +25,24 @@ class LeftNavigationBar(BasePage):
         This is much faster than waiting for child elements to appear.
         :return: bool: True if menu is expanded (aria-expanded="true"), False otherwise.
         """
+        import logging
+        import time
+
+        logger = logging.getLogger(__name__)
+
+        start_time = time.time()
         try:
             aria_expanded = await self.page.get_attribute(self.locators.PIPELINES_BUTTON, "aria-expanded")
-            return aria_expanded == "true"
-        except Exception:
+            elapsed = (time.time() - start_time) * 1000
+            is_expanded = aria_expanded == "true"
+            logger.info(
+                f"[PIPELINES EXPAND CHECK] aria-expanded='{aria_expanded}', "
+                f"is_expanded={is_expanded}, took {elapsed:.0f}ms"
+            )
+            return is_expanded
+        except Exception as e:
+            elapsed = (time.time() - start_time) * 1000
+            logger.error(f"[PIPELINES EXPAND CHECK] FAILED after {elapsed:.0f}ms - {type(e).__name__}: {str(e)}")
             return False
 
     async def verify_link_available_under_pipelines_button(self, link_name: str) -> bool:

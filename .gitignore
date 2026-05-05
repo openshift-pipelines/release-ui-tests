@@ -46,6 +46,9 @@ tmp/
 target/
 dist/
 
+# PDF files
+*.pdf
+
 # JetBrains IDE
 .idea/
 

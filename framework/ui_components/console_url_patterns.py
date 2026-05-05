@@ -7,11 +7,11 @@ Each pattern may match as a substring of the full URL (query strings and hashes 
 
 import re
 
-PIPELINES_NS_URL = re.compile(r"pipelines/ns/[^/?#]+")
+PIPELINES_NS_URL = re.compile(r"pipelines/(?:all-namespaces|ns/[^/?#]+)")
 
 PIPELINES_OVERVIEW_URL = re.compile(r"pipelines-overview/(?:all-namespaces|ns/[^/?#]+)")
 
-PIPELINE_BUILDER_URL = re.compile(r"k8s/ns/[^/?#]+/tekton\.dev~v1~Pipeline/~new/builder")
+PIPELINE_BUILDER_URL = re.compile(r"k8s/ns/[^/?#]+/tekton\.dev~v1~Pipeline/(?:~new|[^/?#]+)/builder")
 
 CREATE_PIPELINE_RUN_URL = re.compile(r"k8s/ns/[^/?#]+/tekton\.dev~v1~PipelineRun/~new")
 

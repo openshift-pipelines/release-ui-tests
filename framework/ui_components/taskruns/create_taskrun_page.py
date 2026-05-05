@@ -1,64 +1,36 @@
 from playwright.async_api import Page
 
 from framework.config.config import Config
-from framework.locators.tasks import TaskYamlPageLocators
+from framework.locators.tasks import CreateTaskRunPageLocators
 from framework.ui_components.base_page import BasePage
-from framework.ui_components.commons.actions_menu import ActionsMenu
 from framework.ui_components.commons.favorites import Favorites
 from framework.ui_components.commons.monaco_editor import MonacoEditor
 from framework.ui_components.commons.project_selector import ProjectSelector
-from framework.ui_components.console_url_patterns import TASK_YAML_URL
 
 
-class TaskYamlPage(BasePage):
-    """Page object for the Task YAML editor tab."""
+class CreateTaskRunPage(BasePage):
+    """Page object for the Create TaskRun YAML editor page."""
 
     def __init__(self, page: Page, config: Config) -> None:
         super().__init__(page, config)
-        self.locators = TaskYamlPageLocators()
+        self.locators = CreateTaskRunPageLocators()
         self.project_selector = ProjectSelector(page, config)
         self.favorites = Favorites(page, config)
-        self.actions_menu = ActionsMenu(page, config)
         # Compose MonacoEditor component for editor interactions
         self.monaco_editor = MonacoEditor(page, config)
 
     async def verify_on_page(self) -> bool:
         """
-        Verifies that the Task YAML tab is currently displayed by checking URL and
-        YAML editor visibility.
-        :return: bool: True if URL matches and YAML editor is visible.
-        :raises AssertionError: With specific message if URL or editor check fails.
+        Verifies that the Create TaskRun page is currently displayed by checking URL and header visibility.
+        Waits for the URL to contain 'tekton.dev~v1~TaskRun/~new', then checks if the Create TaskRun header
+        is visible.
+        :return: bool: True if URL matches and Create TaskRun header is visible.
+        :raises AssertionError: With specific message if URL or header check fails.
         :raises TimeoutError: If URL doesn't match within the timeout.
         """
-        return await self._verify_page_regex(TASK_YAML_URL, self.locators.YAML_EDITOR, "Task YAML page")
-
-    async def get_task_name(self) -> str:
-        """
-        Returns the task name displayed in the h1 heading.
-        :return: str: The text content of the task name heading.
-        """
-        return await self.page.locator(self.locators.TASK_NAME_HEADING).inner_text()
-
-    async def navigate_to_details_tab(self) -> bool:
-        """
-        Switches to the Details tab.
-        :return: bool: True if tab click succeeds.
-        """
-        return await self.click_element(self.locators.DETAILS_TAB)
-
-    async def navigate_to_yaml_tab(self) -> bool:
-        """
-        Switches to the YAML tab.
-        :return: bool: True if tab click succeeds.
-        """
-        return await self.click_element(self.locators.YAML_TAB)
-
-    async def click_breadcrumb_tasks(self) -> bool:
-        """
-        Clicks the 'Tasks' breadcrumb link to navigate back to the Tasks list page.
-        :return: bool: True if click succeeds.
-        """
-        return await self.click_element(self.locators.BREADCRUMB_TASKS_LINK)
+        return await self.wait_for_url_to_contain("tekton.dev~v1~TaskRun/~new") and await self.is_visible(
+            self.locators.CREATE_TASKRUN_HEADER
+        )
 
     async def is_yaml_editor_visible(self) -> bool:
         """
@@ -90,7 +62,7 @@ class TaskYamlPage(BasePage):
 
     async def click_toggle_sidebar(self) -> bool:
         """
-        Clicks the sidebar toggle button to show/hide the schema sidebar.
+        Clicks the 'Hide sidebar' toolbar button to show/hide the schema sidebar.
         :return: bool: True if click succeeds.
         """
         return await self.click_element(self.locators.TOGGLE_SIDEBAR_BUTTON)
@@ -102,19 +74,12 @@ class TaskYamlPage(BasePage):
         """
         return await self.click_element(self.locators.SHORTCUTS_BUTTON)
 
-    async def click_save(self) -> bool:
+    async def click_create(self) -> bool:
         """
-        Clicks the 'Save' button to save the YAML changes.
+        Clicks the 'Create' button to submit the YAML and create the TaskRun resource.
         :return: bool: True if click succeeds.
         """
-        return await self.click_element(self.locators.SAVE_BUTTON)
-
-    async def click_reload(self) -> bool:
-        """
-        Clicks the 'Reload' button to discard local edits and reload the YAML from the server.
-        :return: bool: True if click succeeds.
-        """
-        return await self.click_element(self.locators.RELOAD_BUTTON)
+        return await self.click_element(self.locators.SAVE_CHANGES_BUTTON)
 
     async def click_cancel(self) -> bool:
         """
@@ -129,3 +94,17 @@ class TaskYamlPage(BasePage):
         :return: bool: True if click succeeds.
         """
         return await self.click_element(self.locators.DOWNLOAD_BUTTON)
+
+    async def click_close_sidebar(self) -> bool:
+        """
+        Clicks the 'Close' button on the schema sidebar to close it.
+        :return: bool: True if click succeeds.
+        """
+        return await self.click_element(self.locators.CLOSE_SIDEBAR_BUTTON)
+
+    async def is_schema_sidebar_visible(self) -> bool:
+        """
+        Checks whether the schema sidebar (with 'TaskRun' heading) is visible.
+        :return: bool: True if the sidebar is visible, False otherwise.
+        """
+        return await self.is_visible(self.locators.SCHEMA_SIDEBAR_HEADING)

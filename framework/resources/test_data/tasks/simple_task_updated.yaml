@@ -2,8 +2,10 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: simple-task
+  resourceVersion: "{{metadata.resourceVersion}}"
+  uid: "{{metadata.uid}}"
   labels:
-    version: v1
+    version: v2
 spec:
   steps:
     - name: echo

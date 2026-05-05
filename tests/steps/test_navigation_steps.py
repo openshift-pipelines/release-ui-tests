@@ -51,15 +51,38 @@ def user_expands_pipelines_menu(page: Dict[str, Any], playwright_event_loop: asy
     :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution.
     :return: None
     """
+    import logging
+    import time
+
+    logger = logging.getLogger(__name__)
 
     async def _step() -> None:
+        step_start = time.time()
+        logger.info("[EXPAND PIPELINES STEP] Starting expand Pipelines step")
+
         # Check if menu is already expanded using aria-expanded attribute
+        check_start = time.time()
         is_expanded = await page["nav"].is_pipelines_menu_expanded()
+        check_elapsed = (time.time() - check_start) * 1000
+        logger.info(f"[EXPAND PIPELINES STEP] Expansion check took {check_elapsed:.0f}ms, is_expanded={is_expanded}")
 
         # If not expanded, click Pipelines button to expand
         if not is_expanded:
+            click_start = time.time()
+            logger.info("[EXPAND PIPELINES STEP] Menu not expanded, clicking Pipelines button...")
             await page["nav"].click_pipelines_button()
+            click_elapsed = (time.time() - click_start) * 1000
+            logger.info(f"[EXPAND PIPELINES STEP] Click took {click_elapsed:.0f}ms")
+
+            wait_start = time.time()
             await page["raw_page"].wait_for_timeout(500)  # Wait for menu animation
+            wait_elapsed = (time.time() - wait_start) * 1000
+            logger.info(f"[EXPAND PIPELINES STEP] Post-click wait took {wait_elapsed:.0f}ms")
+        else:
+            logger.info("[EXPAND PIPELINES STEP] Menu already expanded, skipping click")
+
+        total_elapsed = (time.time() - step_start) * 1000
+        logger.info(f"[EXPAND PIPELINES STEP] COMPLETED - Total time: {total_elapsed:.0f}ms")
 
     run_async(playwright_event_loop, _step())
 
@@ -105,6 +128,21 @@ def user_navigates_to_pipelines(page: Dict[str, Any], playwright_event_loop: asy
         "Pipelines page verification failed."
     )
     assert run_async(playwright_event_loop, page["pipelines"].list.verify_data_load(tab_name="Pipelines tab"))
+
+
+@when("the user navigates to PipelineRuns tab")
+@then("the user navigates to PipelineRuns tab")
+def user_navigates_to_pipeline_runs_tab(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
+    """
+    step for navigating to the PipelineRuns tab on the Pipelines page.
+    :param Dict[str, Any] page: Dictionary containing Page Object instances (from page fixture).
+    :return: None: Raises TimeoutError if tab element is not clickable within the timeout.
+    Raises AssertionError if navigation fails.
+    """
+    assert run_async(playwright_event_loop, page["pipelines"].list.navigate_to_pipeline_runs_tab()), (
+        "Failed to navigate to PipelineRuns tab."
+    )
+    assert run_async(playwright_event_loop, page["pipelines"].list.verify_data_load(tab_name="PipelineRuns tab"))
 
 
 @when("the user navigates to the Overview page")
@@ -165,3 +203,43 @@ def verify_links_available_under_pipelines_button(
     assert run_async(playwright_event_loop, page["nav"].verify_link_available_under_pipelines_button(links)), (
         f"Link '{links}' is not available under Pipelines button."
     )
+
+
+@when("the user navigates to Tasks tab")
+@then("the user navigates to Tasks tab")
+def user_navigates_to_tasks_tab(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
+    """
+    step for navigating to the Tasks tab on the Tasks page.
+    :param Dict[str, Any] page: Dictionary containing Page Object instances (from page fixture).
+    :return: None: Raises TimeoutError if tab element is not clickable within the timeout.
+    Raises AssertionError if navigation fails.
+    """
+    assert run_async(playwright_event_loop, page["tasks"].list.navigate_to_tasks_tab()), (
+        "Failed to navigate to Tasks tab."
+    )
+    assert run_async(playwright_event_loop, page["tasks"].list.verify_data_load(tab_name="Tasks tab"))
+
+
+@when("the user navigates to TaskRuns tab")
+@then("the user navigates to TaskRuns tab")
+def user_navigates_to_task_runs_tab(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
+    """
+    step for navigating to the TaskRuns tab on the Tasks page.
+    :param Dict[str, Any] page: Dictionary containing Page Object instances (from page fixture).
+    :return: None: Raises TimeoutError if tab element is not clickable within the timeout.
+    Raises AssertionError if navigation fails.
+    """
+    assert run_async(playwright_event_loop, page["tasks"].list.navigate_to_task_runs_tab()), (
+        "Failed to navigate to TaskRuns tab."
+    )
+    assert run_async(playwright_event_loop, page["tasks"].list.verify_data_load(tab_name="TaskRuns tab"))
+
+
+@then("the tasks page should be visible")
+def tasks_page_visible(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
+    """
+    step for verifying that the Tasks page is visible.
+    :param Dict[str, Any] page: Dictionary containing Page Object instances (from page fixture).
+    :return: None: Raises AssertionError if Tasks page is not visible, TimeoutError if URL doesn't match.
+    """
+    assert run_async(playwright_event_loop, page["tasks"].list.verify_on_page()), "Tasks page header not visible."

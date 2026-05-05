@@ -35,7 +35,7 @@ class PipelineRunBasePageLocators:
     BREADCRUMB_PIPELINERUNS_LINK = 'nav[aria-label="Breadcrumb"] a:has-text("PipelineRuns")'
 
     # Page header
-    PIPELINERUN_NAME_HEADING = "h1"
+    PIPELINERUN_NAME_HEADING = "div.pipelinerun-details-page"
 
     # Tabs (common to all PipelineRun pages)
     DETAILS_TAB = 'role=tab[name="Details"]'

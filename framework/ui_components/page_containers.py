@@ -17,6 +17,7 @@ from playwright.async_api import Page
 
 from framework.config.config import Config
 from framework.ui_components.pipelineruns.create_pipeline_run_page import CreatePipelineRunPage
+from framework.ui_components.pipelineruns.pipeline_runs_page import PipelineRunsPage
 from framework.ui_components.pipelineruns.pipelinerun_details_page import PipelineRunDetailsPage
 from framework.ui_components.pipelineruns.pipelinerun_logs_page import PipelineRunLogsPage
 from framework.ui_components.pipelineruns.pipelinerun_parameters_page import PipelineRunParametersPage
@@ -26,14 +27,16 @@ from framework.ui_components.pipelines.pipeline_builder_page import PipelineBuil
 from framework.ui_components.pipelines.pipeline_details_page import PipelineDetailsPage
 from framework.ui_components.pipelines.pipeline_parameters_page import PipelineParametersPage
 from framework.ui_components.pipelines.pipeline_pipelineruns_tab_page import PipelinePipelineRunsTabPage
-from framework.ui_components.pipelines.pipeline_runs_page import PipelineRunsPage
 from framework.ui_components.pipelines.pipeline_yaml_page import PipelineYamlPage
 from framework.ui_components.pipelines.pipelines_overview_page import PipelinesOverViewPage
 from framework.ui_components.pipelines.pipelines_page import PipelinesPage
 from framework.ui_components.repositories_page import RepositoriesPage
+from framework.ui_components.taskruns.create_taskrun_page import CreateTaskRunPage
+from framework.ui_components.taskruns.task_runs_page import TaskRunsPage
+from framework.ui_components.taskruns.taskrun_details_page import TaskRunDetailsPage
+from framework.ui_components.taskruns.taskrun_yaml_page import TaskRunYamlPage
 from framework.ui_components.tasks.create_task_page import CreateTaskPage
 from framework.ui_components.tasks.task_details_page import TaskDetailsPage
-from framework.ui_components.tasks.task_runs_page import TaskRunsPage
 from framework.ui_components.tasks.task_yaml_page import TaskYamlPage
 from framework.ui_components.tasks.tasks_page import TasksPage
 from framework.ui_components.triggers.create_clustertriggerbinding_page import CreateClusterTriggerBindingPage
@@ -123,6 +126,18 @@ class TaskPages:
         self.yaml = TaskYamlPage(page, config)
 
 
+class TaskRunPages:
+    """
+    Container for TaskRun detail pages (specific taskrun resource).
+
+    Navigation: Tasks → TaskRuns tab → Click taskrun name → Details/YAML tabs
+    """
+
+    def __init__(self, page: Page, config: Config) -> None:
+        self.details = TaskRunDetailsPage(page, config)
+        self.yaml = TaskRunYamlPage(page, config)
+
+
 class TasksPages:
     """
     Container for all task-related pages.
@@ -131,7 +146,9 @@ class TasksPages:
     - list: Tasks list (Tasks tab)
     - runs: TaskRuns list (TaskRuns tab)
     - task: Container for task detail pages
+    - taskrun: Container for taskrun detail pages
     - create: Create new Task page
+    - create_run: Create new TaskRun page
     """
 
     def __init__(self, page: Page, config: Config) -> None:
@@ -139,11 +156,13 @@ class TasksPages:
         self.list = TasksPage(page, config)
         self.runs = TaskRunsPage(page, config)
 
-        # Detail page container
+        # Detail page containers
         self.task = TaskPages(page, config)
+        self.taskrun = TaskRunPages(page, config)
 
-        # Create page
+        # Create pages
         self.create = CreateTaskPage(page, config)
+        self.create_run = CreateTaskRunPage(page, config)
 
 
 class EventListenerPages:

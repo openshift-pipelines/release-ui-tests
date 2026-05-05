@@ -66,9 +66,46 @@ class YamlLoader:
             return f.read()
 
     @classmethod
+    def load_taskrun_yaml(cls, yaml_filename: str) -> str:
+        """
+        Load a taskrun YAML file from test_data/taskruns directory.
+
+        :param str yaml_filename: Name of the YAML file (e.g., "simple_taskrun.yaml")
+        :return: str: YAML content as string
+        :raises FileNotFoundError: If the YAML file does not exist
+        """
+        yaml_path = cls.TEST_DATA_BASE / "taskruns" / yaml_filename
+        if not yaml_path.exists():
+            raise FileNotFoundError(f"TaskRun YAML file not found: {yaml_path}")
+
+        with open(yaml_path, "r") as f:
+            return f.read()
+
+    @classmethod
     def get_task_metadata(cls, yaml_content: str) -> Dict[str, str]:
         """
         Extract metadata from task YAML content.
+
+        :param str yaml_content: YAML content string
+        :return: Dict[str, str]: Metadata dictionary with 'name', 'kind', 'apiVersion'
+        :raises ValueError: If YAML content is invalid or missing required fields
+        """
+        import yaml
+
+        try:
+            data = yaml.safe_load(yaml_content)
+            return {
+                "name": data.get("metadata", {}).get("name", ""),
+                "kind": data.get("kind", ""),
+                "apiVersion": data.get("apiVersion", ""),
+            }
+        except yaml.YAMLError as e:
+            raise ValueError(f"Invalid YAML content: {e}")
+
+    @classmethod
+    def get_pipeline_metadata(cls, yaml_content: str) -> Dict[str, str]:
+        """
+        Extract metadata from pipeline YAML content.
 
         :param str yaml_content: YAML content string
         :return: Dict[str, str]: Metadata dictionary with 'name', 'kind', 'apiVersion'

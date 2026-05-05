@@ -62,9 +62,18 @@ class PipelineBuilderPage(BasePage):
         """
         Clicks the 'Create' button to create the pipeline.
         Note: This button is disabled until the form is valid (e.g., at least one task is added).
+        Used in CREATE workflow (new pipeline).
         :return: bool: True if click succeeds.
         """
         return await self.click_element(self.locators.CREATE_BUTTON)
+
+    async def click_save(self) -> bool:
+        """
+        Clicks the 'Save' button to save changes to an existing pipeline.
+        Used in EDIT workflow (editing existing pipeline).
+        :return: bool: True if click succeeds.
+        """
+        return await self.click_element(self.locators.SAVE_BUTTON)
 
     async def click_cancel(self) -> bool:
         """

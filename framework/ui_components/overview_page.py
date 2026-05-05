@@ -27,6 +27,12 @@ class OverViewPage(BasePage):
         be present), subsequent calls skip this check entirely. Then waits for URL to end with
         "dashboards", and checks if the Overview header is visible. Both conditions must be true
         for verification to pass.
+
+        The tour skip button click is wrapped in try-except to handle cases where:
+        - Button is visible but not clickable (animation in progress)
+        - Button disappears between visibility check and click
+        - Other transient UI issues
+
         Note: Flag is not thread-safe currently. See TODO comment for thread-safe implementation
         when parallel test execution is added.
         :return: bool: True if URL matches and Overview header is visible.
@@ -35,9 +41,16 @@ class OverViewPage(BasePage):
         """
         global _tour_skipped
 
+        overview_page_status = await self._verify_page("dashboards", self.locators.OVERVIEW_HEADER, "Overview page")
+
         if not _tour_skipped:
-            if await self.is_visible(self.locators.SKIP_TOUR_BUTTON):
-                await self.click_element(self.locators.SKIP_TOUR_BUTTON)
+            if await self.is_visible(self.locators.SKIP_TOUR_BUTTON, timeout=5000):
+                try:
+                    await self.click_element(self.locators.SKIP_TOUR_BUTTON)
+                except Exception:
+                    # Silently ignore click failures - tour button is optional UI element
+                    # Common failures: element not clickable, already dismissed, animation timing
+                    pass
             _tour_skipped = True
 
-        return await self._verify_page("dashboards", self.locators.OVERVIEW_HEADER, "Overview page")
+        return overview_page_status

@@ -3,7 +3,7 @@ Feature: Task CRUD Operations
   Background:
     Given the user is logged into openshift console with auth kube:admin
     When the user expands Pipelines in left navigation bar
-    When the user navigates to the Tasks page
+    And the user navigates to the Tasks page
     And user switches to current project
 
   @smoke @sanity
@@ -13,16 +13,16 @@ Feature: Task CRUD Operations
     And the task details page should display the task name as "<task_name>"
 
     Examples:
-      | yaml_file            | task_name       |
-      | task_for_create.yaml | task-for-create |
+      | yaml_file        | task_name   |
+      | simple_task.yaml | simple-task |
 
   @smoke @sanity
   Scenario Outline:  Verify created task appears in list
     Then the task "<task_name>" should appear in the tasks list
 
     Examples:
-      | task_name       |
-      | task-for-create |
+      | task_name    |
+      | simple-task  |
 
 
   @sanity
@@ -31,16 +31,16 @@ Feature: Task CRUD Operations
     Then the task details page should display the task name as "<task_name>"
 
     Examples:
-      |  task_name       | updated_yaml_file          |
-      |  task-for-create | task_for_edit_updated.yaml   |
+      |  task_name   | updated_yaml_file          |
+      |  simple-task | simple_task_updated.yaml   |
 
   @smoke @sanity
   Scenario Outline:  Verify edited task appears in list
     Then the task "<task_name>" should appear in the tasks list
 
     Examples:
-      | task_name       |
-      | task-for-create |
+      | task_name    |
+      | simple-task  |
 
   @sanity
   Scenario Outline: Delete task and verify removal
@@ -48,5 +48,5 @@ Feature: Task CRUD Operations
     Then the task "<task_name>" should not appear in the tasks list
 
     Examples:
-      |  task_name         |
-      |  task-for-create   |
+      |  task_name     |
+      |  simple-task   |
