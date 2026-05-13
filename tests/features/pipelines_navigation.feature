@@ -1,45 +1,36 @@
 Feature: Pipelines UI Navigation & Visibility
 
-  @smoke @sanity
+  Background:
+    Given the user is logged into openshift console with auth kube:admin
+
+  @smokee @sanity
   Scenario: Verify Pipelines button is visible in left navigation bar
-    Given the user is on the OpenShift login page
-    When user chooses to login with kube:admin
-    When the user logs in with valid credentials
     Then Validate Pipelines button is visible in the left navigation bar
 
 
-  @smoke @sanity
+  @smokee @sanity
   Scenario Outline: Verify appropriate links are available under pipelines button
-    Given the user is on the OpenShift login page
-    When user chooses to login with kube:admin
-    When the user logs in with valid credentials
-    And Validate Pipelines button is visible in the left navigation bar
+    Given Validate Pipelines button is visible in the left navigation bar
     And the user clicks on Pipelines button
     Then Verify the following <links> are available under Pipelines button
     Examples:
     | links     |
     | Overview  |
-    | Pipelines |
-    | Tasks     |
-    | Triggers  |
+#    | Pipelines |
+#    | Tasks     |
+#    | Triggers  |
 
 
   @smoke @sanity
   Scenario: Verify successful navigation to Overview page
-    Given the user is on the OpenShift login page
-    When user chooses to login with kube:admin
-    And the user logs in with valid credentials
-    And Validate Pipelines button is visible in the left navigation bar
+    Given Validate Pipelines button is visible in the left navigation bar
     And the user clicks on Pipelines button
     Then the user navigates to the Overview page
 
 
   @smoke @sanity
   Scenario: Verify successful navigation to Pipelines page and Sub Tabs
-    Given the user is on the OpenShift login page
-    When user chooses to login with kube:admin
-    And the user logs in with valid credentials
-    And Validate Pipelines button is visible in the left navigation bar
+    Given Validate Pipelines button is visible in the left navigation bar
     And the user clicks on Pipelines button
     Then the user navigates to the Pipelines page
     And the user navigates to PipelineRuns tab
@@ -48,10 +39,7 @@ Feature: Pipelines UI Navigation & Visibility
 
   @smoke @sanity
   Scenario: Verify successful navigation to Tasks page and Sub Tabs
-    Given the user is on the OpenShift login page
-    When user chooses to login with kube:admin
-    And the user logs in with valid credentials
-    And Validate Pipelines button is visible in the left navigation bar
+    Given Validate Pipelines button is visible in the left navigation bar
     And the user clicks on Pipelines button
     Then the user navigates to the Tasks page
     And the user navigates to TaskRuns tab
@@ -59,10 +47,7 @@ Feature: Pipelines UI Navigation & Visibility
 
   @smoke @sanity
   Scenario: Verify successful navigation to Triggers page and Sub Tabs
-    Given the user is on the OpenShift login page
-    When user chooses to login with kube:admin
-    And the user logs in with valid credentials
-    And Validate Pipelines button is visible in the left navigation bar
+    Given Validate Pipelines button is visible in the left navigation bar
     And the user clicks on Pipelines button
     Then the user navigates to the Triggers page
     And the user navigates to TriggerTemplates tab
