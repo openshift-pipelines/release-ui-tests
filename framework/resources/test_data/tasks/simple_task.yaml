@@ -3,11 +3,39 @@ kind: Task
 metadata:
   name: simple-task
   labels:
-    version: v1
+    app.kubernetes.io/name: simple-task
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: build
+    app.kubernetes.io/part-of: ci-pipeline
+    app.kubernetes.io/managed-by: tekton
+    team: openshift-pipelines
+    environment: development
+  annotations:
+    tekton.dev/description: "Build and test application artifacts"
+    tekton.dev/pipelines.minVersion: "0.50.0"
+    tekton.dev/tags: "build,test,ci"
+    owner: platform-team@example.com
+    documentation: "https://docs.example.com/tasks/simple-task"
 spec:
+  params:
+    - name: image-name
+      type: string
+      description: Container image name
+      default: "app"
+    - name: image-tag
+      type: string
+      description: Container image tag
+      default: "latest"
   steps:
-    - name: echo
+    - name: build
       image: registry.redhat.io/ubi9/ubi-minimal
       script: |
         #!/bin/bash
-        echo "Hello from simple task!"
+        echo "Building application: $(params.image-name):$(params.image-tag)"
+        echo "Build completed successfully"
+    - name: test
+      image: registry.redhat.io/ubi9/ubi-minimal
+      script: |
+        #!/bin/bash
+        echo "Running unit tests..."
+        echo "All tests passed"

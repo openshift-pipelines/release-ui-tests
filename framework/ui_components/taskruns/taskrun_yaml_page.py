@@ -2,20 +2,16 @@ from playwright.async_api import Page
 
 from framework.config.config import Config
 from framework.locators.tasks import TaskRunYamlPageLocators
-from framework.ui_components.base_page import BasePage
-from framework.ui_components.commons.favorites import Favorites
 from framework.ui_components.commons.monaco_editor import MonacoEditor
-from framework.ui_components.commons.project_selector import ProjectSelector
+from framework.ui_components.taskruns.taskrun_base_page import TaskRunBasePage
 
 
-class TaskRunYamlPage(BasePage):
-    """Page object for the TaskRun YAML editor tab."""
+class TaskRunYamlPage(TaskRunBasePage):
+    """Page object for the TaskRun YAML editor tab. Inherits common functionality from TaskRunBasePage."""
 
     def __init__(self, page: Page, config: Config) -> None:
         super().__init__(page, config)
         self.locators = TaskRunYamlPageLocators()
-        self.project_selector = ProjectSelector(page, config)
-        self.favorites = Favorites(page, config)
         # Compose MonacoEditor component for editor interactions
         self.monaco_editor = MonacoEditor(page, config)
 
@@ -29,42 +25,6 @@ class TaskRunYamlPage(BasePage):
         return await self.wait_for_url_to_contain("tekton.dev~v1~TaskRun") and await self.is_visible(
             self.locators.YAML_EDITOR
         )
-
-    async def get_taskrun_name(self) -> str:
-        """
-        Extracts the TaskRun name from the page heading.
-
-        :return: str: TaskRun name displayed in the heading
-        """
-        try:
-            return await self.page.text_content(self.locators.TASKRUN_NAME_HEADING) or ""
-        except Exception as e:
-            self.logger.error(f"Failed to get TaskRun name: {e}")
-            return ""
-
-    async def click_breadcrumb_taskruns(self) -> bool:
-        """
-        Clicks the 'TaskRuns' link in the breadcrumb to navigate back to TaskRuns list.
-
-        :return: bool: True if click succeeds
-        """
-        return await self.click_element(self.locators.BREADCRUMB_TASKRUNS_LINK)
-
-    async def navigate_to_details_tab(self) -> bool:
-        """
-        Navigates to the Details tab.
-
-        :return: bool: True if tab click succeeds
-        """
-        return await self.click_element(self.locators.DETAILS_TAB)
-
-    async def navigate_to_yaml_tab(self) -> bool:
-        """
-        Navigates to the YAML tab.
-
-        :return: bool: True if tab click succeeds
-        """
-        return await self.click_element(self.locators.YAML_TAB)
 
     async def click_copy_code(self) -> bool:
         """

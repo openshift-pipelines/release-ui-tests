@@ -35,6 +35,10 @@ PIPELINERUN_TASKRUNS_URL = re.compile(r"k8s/ns/[^/?#]+/tekton\.dev~v1~PipelineRu
 
 TASKS_URL = re.compile(r"tasks/(?:all-namespaces|ns/[^/?#]+)")
 
+TASKRUN_LOGS_URL = re.compile(r"k8s/ns/[^/?#]+/tekton\.dev~v1~TaskRun/[^/?#]+/logs")
+
+TASKRUN_EVENTS_URL = re.compile(r"k8s/ns/[^/?#]+/tekton\.dev~v1~TaskRun/[^/?#]+/events")
+
 TASK_DETAILS_URL = re.compile(r"k8s/ns/[^/?#]+/tekton\.dev~v1~Task/[^/?#]+$")
 
 TASK_YAML_URL = re.compile(r"k8s/ns/[^/?#]+/tekton\.dev~v1~Task/[^/?#]+/yaml")

@@ -9,6 +9,7 @@ import asyncio
 from pathlib import Path
 from typing import Any, Dict
 
+import yaml
 from pytest_bdd import parsers, scenarios, then, when
 
 from framework.fixtures.async_bridge import run_async
@@ -311,5 +312,229 @@ def verify_task_not_in_list(
         # Verify task does NOT appear in list
         task_not_visible = await page["tasks"].list.verify_task_not_in_list(task_name)
         assert task_not_visible, f"Task '{task_name}' still appears in tasks list after deletion"
+
+    run_async(playwright_event_loop, _step())
+
+
+@when(parsers.parse('the user navigates to task details page for task "{task_name}"'))
+def navigate_to_task_details(
+    page: Dict[str, Any], task_name: str, playwright_event_loop: asyncio.AbstractEventLoop, config: object
+) -> None:
+    """
+    Navigate to the task details page by clicking on the task name in the tasks list.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param str task_name: Name of the task to navigate to
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :param object config: Config object for timeout values
+    :return: None: Raises AssertionError if navigation fails
+    """
+
+    async def _step() -> None:
+        # Click on the task name link
+        click_success = await page["tasks"].list.click_task_name(task_name)
+        assert click_success, f"Failed to click on task name '{task_name}'"
+
+        # Wait for task details page to load
+        await page["raw_page"].wait_for_load_state("networkidle", timeout=config.timeout_ms)
+
+        # Verify we're on the task details page
+        on_page = await page["tasks"].task.details.verify_on_page()
+        assert on_page, f"Failed to navigate to task details page for '{task_name}'"
+
+    run_async(playwright_event_loop, _step())
+
+
+@then("the task details page should display namespace as current project")
+def verify_task_namespace_is_current_project(
+    page: Dict[str, Any], test_project: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """
+    Verify that the task details page displays the current test project as the namespace.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param str test_project: Current test project name from fixture
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if namespace does not match current project
+    """
+
+    async def _step() -> None:
+        displayed_namespace = await page["tasks"].task.details.get_namespace()
+        assert displayed_namespace == test_project, (
+            f"Task details page displays namespace '{displayed_namespace}' but expected '{test_project}'"
+        )
+
+    run_async(playwright_event_loop, _step())
+
+
+@then(parsers.parse('the task details page should display labels from YAML file "{yaml_file}"'))
+def verify_task_labels_from_yaml(
+    page: Dict[str, Any], yaml_file: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """
+    Verify that the task details page displays labels matching the YAML file.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param str yaml_file: Name of YAML file in test_data/tasks/
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if labels do not match
+    """
+
+    async def _step() -> None:
+        # Load YAML content
+        yaml_content = YamlLoader.load_task_yaml(yaml_file)
+
+        # Extract expected labels from YAML
+        metadata = YamlLoader.get_labels_and_annotations(yaml_content)
+        expected_labels = metadata["labels"]
+
+        # Get actual labels from page
+        actual_labels = await page["tasks"].task.details.get_labels()
+
+        # Verify all expected labels are present
+        for key, value in expected_labels.items():
+            assert key in actual_labels, f"Expected label '{key}' not found in task details"
+            assert actual_labels[key] == value, f"Label '{key}' has value '{actual_labels[key]}' but expected '{value}'"
+
+    run_async(playwright_event_loop, _step())
+
+
+@then(parsers.parse('the task details page should display annotations from YAML file "{yaml_file}"'))
+def verify_task_annotations_from_yaml(
+    page: Dict[str, Any], yaml_file: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """
+    Verify that the task details page displays annotations count matching the YAML file.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param str yaml_file: Name of YAML file in test_data/tasks/
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if annotation count does not match
+    """
+
+    async def _step() -> None:
+        # Load YAML content
+        yaml_content = YamlLoader.load_task_yaml(yaml_file)
+
+        # Extract expected annotations from YAML
+        metadata = YamlLoader.get_labels_and_annotations(yaml_content)
+        expected_annotations = metadata["annotations"]
+        expected_count = len(expected_annotations)
+
+        # Get actual annotation count from page
+        actual_count = await page["tasks"].task.details.get_annotations_count()
+
+        assert actual_count == expected_count, (
+            f"Task details page displays {actual_count} annotations but expected {expected_count} (from {yaml_file})"
+        )
+
+    run_async(playwright_event_loop, _step())
+
+
+@when("the user navigates to YAML tab")
+def navigate_to_yaml_tab(
+    page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop, config: object
+) -> None:
+    """
+    Navigate from task details page to YAML tab.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :param object config: Config object for timeout values
+    :return: None: Raises AssertionError if navigation fails
+    """
+
+    async def _step() -> None:
+        # Click YAML tab
+        tab_clicked = await page["tasks"].task.details.navigate_to_yaml_tab()
+        assert tab_clicked, "Failed to click YAML tab"
+
+        # Wait for YAML editor to load
+        await page["raw_page"].wait_for_timeout(2000)
+
+        # Verify we're on the YAML page
+        on_yaml_page = await page["tasks"].task.yaml.verify_on_page()
+        assert on_yaml_page, "Failed to navigate to task YAML page"
+
+        # Wait for Monaco editor to fully load content
+        await page["raw_page"].wait_for_timeout(1000)
+
+    run_async(playwright_event_loop, _step())
+
+
+@then(parsers.parse('the task YAML page should display the task name as "{expected_name}"'))
+def verify_yaml_page_task_name(
+    page: Dict[str, Any], expected_name: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """
+    Verify that the task YAML page displays the correct task name.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param str expected_name: Expected task name
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if name does not match
+    """
+
+    async def _step() -> None:
+        displayed_name = await page["tasks"].task.yaml.get_task_name()
+        assert displayed_name == expected_name, (
+            f"Task YAML page displays name '{displayed_name}' but expected '{expected_name}'"
+        )
+
+    run_async(playwright_event_loop, _step())
+
+
+@then(parsers.parse('the task YAML page should display content from YAML file "{yaml_file}"'))
+def verify_yaml_content_from_file(
+    page: Dict[str, Any], yaml_file: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """
+    Verify that YAML editor content matches expected file structure.
+
+    Compares key fields (name, labels, annotations) between the YAML editor
+    and the expected YAML file. Ignores Kubernetes-generated fields like
+    resourceVersion, uid, creationTimestamp.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param str yaml_file: Name of YAML file in test_data/tasks/
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if YAML content does not match
+    """
+
+    async def _step() -> None:
+        # Get YAML content from Monaco editor
+        yaml_from_editor = await page["tasks"].task.yaml.monaco_editor.get_content()
+        assert yaml_from_editor, "YAML editor content is empty"
+
+        # Load expected YAML from file
+        expected_yaml_content = YamlLoader.load_task_yaml(yaml_file)
+
+        # Parse both YAMLs
+        editor_data = yaml.safe_load(yaml_from_editor)
+        expected_data = yaml.safe_load(expected_yaml_content)
+
+        # Validate metadata.name
+        assert editor_data.get("metadata", {}).get("name") == expected_data.get("metadata", {}).get("name"), (
+            f"YAML editor shows name '{editor_data.get('metadata', {}).get('name')}' "
+            f"but expected '{expected_data.get('metadata', {}).get('name')}'"
+        )
+
+        # Validate labels (all expected labels must be present with correct values)
+        expected_labels = expected_data.get("metadata", {}).get("labels", {})
+        actual_labels = editor_data.get("metadata", {}).get("labels", {})
+
+        for key, value in expected_labels.items():
+            assert key in actual_labels, f"Expected label '{key}' not found in YAML editor"
+            assert actual_labels[key] == value, f"Label '{key}' has value '{actual_labels[key]}' but expected '{value}'"
+
+        # Validate annotations (all expected annotations must be present with correct values)
+        expected_annotations = expected_data.get("metadata", {}).get("annotations", {})
+        actual_annotations = editor_data.get("metadata", {}).get("annotations", {})
+
+        for key, value in expected_annotations.items():
+            assert key in actual_annotations, f"Expected annotation '{key}' not found in YAML editor"
+            assert actual_annotations[key] == value, (
+                f"Annotation '{key}' has value '{actual_annotations[key]}' but expected '{value}'"
+            )
 
     run_async(playwright_event_loop, _step())

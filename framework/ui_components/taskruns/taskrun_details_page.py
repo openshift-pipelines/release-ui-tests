@@ -1,20 +1,21 @@
+import logging
+import re
+from typing import Dict
+
 from playwright.async_api import Page
 
 from framework.config.config import Config
 from framework.locators.tasks import TaskRunDetailsPageLocators
-from framework.ui_components.base_page import BasePage
-from framework.ui_components.commons.favorites import Favorites
-from framework.ui_components.commons.project_selector import ProjectSelector
+from framework.ui_components.taskruns.taskrun_base_page import TaskRunBasePage
 
 
-class TaskRunDetailsPage(BasePage):
-    """Page object for the TaskRun Details page."""
+class TaskRunDetailsPage(TaskRunBasePage):
+    """Page object for the TaskRun Details page. Inherits common functionality from TaskRunBasePage."""
 
     def __init__(self, page: Page, config: Config) -> None:
         super().__init__(page, config)
         self.locators = TaskRunDetailsPageLocators()
-        self.project_selector = ProjectSelector(page, config)
-        self.favorites = Favorites(page, config)
+        self.logger = logging.getLogger(__name__)
 
     async def verify_on_page(self) -> bool:
         """
@@ -24,44 +25,8 @@ class TaskRunDetailsPage(BasePage):
         :return: bool: True if on TaskRun details page
         """
         return await self.wait_for_url_to_contain("tekton.dev~v1~TaskRun") and await self.is_visible(
-            self.locators.TASKRUN_NAME_HEADING
+            self.base_locators.TASKRUN_NAME_HEADING
         )
-
-    async def get_taskrun_name(self) -> str:
-        """
-        Extracts the TaskRun name from the page heading.
-
-        :return: str: TaskRun name displayed in the heading
-        """
-        try:
-            return await self.page.text_content(self.locators.TASKRUN_NAME_HEADING) or ""
-        except Exception as e:
-            self.logger.error(f"Failed to get TaskRun name: {e}")
-            return ""
-
-    async def click_breadcrumb_taskruns(self) -> bool:
-        """
-        Clicks the 'TaskRuns' link in the breadcrumb to navigate back to TaskRuns list.
-
-        :return: bool: True if click succeeds
-        """
-        return await self.click_element(self.locators.BREADCRUMB_TASKRUNS_LINK)
-
-    async def navigate_to_details_tab(self) -> bool:
-        """
-        Navigates to the Details tab.
-
-        :return: bool: True if tab click succeeds
-        """
-        return await self.click_element(self.locators.DETAILS_TAB)
-
-    async def navigate_to_yaml_tab(self) -> bool:
-        """
-        Navigates to the YAML tab.
-
-        :return: bool: True if tab click succeeds
-        """
-        return await self.click_element(self.locators.YAML_TAB)
 
     async def get_namespace(self) -> str:
         """
@@ -106,3 +71,40 @@ class TaskRunDetailsPage(BasePage):
         :return: bool: True if details section is visible
         """
         return await self.is_visible(self.locators.TASKRUN_DETAILS_HEADING)
+
+    async def get_labels(self) -> Dict[str, str]:
+        """
+        Get all labels from the TaskRun details page.
+        Uses inner_text() which automatically waits for visibility and returns only visible text.
+
+        :return: Dict[str, str]: Dictionary of label key-value pairs
+        :raises AssertionError: If label format is unexpected
+        """
+        label_elements = await self.page.locator(self.locators.LABEL_BADGE).all()
+        labels = {}
+        for element in label_elements:
+            label_text = await element.inner_text()
+            if label_text and "=" in label_text:
+                key, value = label_text.split("=", 1)
+                labels[key.strip()] = value.strip()
+            elif label_text:
+                self.logger.warning(f"Label has unexpected format: '{label_text}'")
+        return labels
+
+    async def get_annotations_count(self) -> int:
+        """
+        Get the count of annotations from the annotations button text.
+        Uses inner_text() which automatically waits for visibility.
+
+        :return: int: Number of annotations
+        :raises AssertionError: If button text is empty or has unexpected format
+        """
+        button_text = await self.page.inner_text(self.locators.ANNOTATIONS_COUNT)
+        if not button_text:
+            raise AssertionError("Annotations button text is empty")
+
+        match = re.search(r"(\d+)\s+annotation", button_text)
+        if not match:
+            raise AssertionError(f"Unexpected annotations button format: '{button_text}'")
+
+        return int(match.group(1))

@@ -96,3 +96,13 @@ class TasksPage(TasksBasePage):
         except Exception:
             # If element is still visible or wait times out, verification failed
             return False
+
+    async def click_task_name(self, task_name: str) -> bool:
+        """
+        Click on the task name link to navigate to the task details page.
+
+        :param str task_name: Name of the task to click
+        :return: bool: True if task name link clicked successfully
+        """
+        locator = self.locators.TASK_NAME_LINK.format(task_name=task_name)
+        return await self.click_element(locator)

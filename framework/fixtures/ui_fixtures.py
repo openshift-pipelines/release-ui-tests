@@ -134,6 +134,7 @@ async def page(playwright_page: Page, config: Config) -> Dict[str, Any]:
             - tasks.task.yaml: Task YAML page
             - tasks.taskrun.details: TaskRun details page
             - tasks.taskrun.yaml: TaskRun YAML page
+            - tasks.taskrun.logs: TaskRun logs page
             - tasks.create: Create Task page
             - tasks.create_run: Create TaskRun page
         - "triggers": TriggersPages container with hierarchical structure:

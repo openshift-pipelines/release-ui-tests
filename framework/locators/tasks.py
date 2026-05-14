@@ -43,6 +43,7 @@ class TasksPageLocators:
 
     # Task row verification
     TASK_ROW_BY_NAME = 'tr[data-test-rows="resource-row"]:has-text("{task_name}")'
+    TASK_NAME_LINK = 'tr[data-test-rows="resource-row"]:has-text("{task_name}") a[href*="/tekton.dev~v1~Task/"]'
 
 
 class TaskRunsPageLocators:
@@ -109,6 +110,12 @@ class TaskDetailsPageLocators:
     EDIT_LABELS_BUTTON = 'dt:has(button:has-text("Labels")) button:has-text("Edit")'
     ANNOTATIONS_BUTTON = 'button:has-text("annotations")'
 
+    # Field values for validation
+    NAMESPACE_VALUE = 'dt:has-text("Namespace") + dd a'
+    LABELS_SECTION = 'dt:has-text("Labels") + dd'
+    LABEL_BADGE = 'dt:has-text("Labels") + dd span.pf-v5-c-label__content'
+    ANNOTATIONS_COUNT = 'button:has-text("annotation")'
+
 
 class TaskYamlPageLocators:
     """Locators for the Task YAML editor tab"""
@@ -167,29 +174,8 @@ class CreateTaskRunPageLocators:
     SCHEMA_TAB = 'role=tab[name="Schema"]'
 
 
-class TaskRunDetailsPageLocators:
-    """Locators for the TaskRun Details page"""
-
-    # Breadcrumb
-    BREADCRUMB_TASKRUNS_LINK = 'nav[aria-label="Breadcrumb"] a:has-text("TaskRuns")'
-    BREADCRUMB_TASKRUN_DETAILS_LINK = 'nav[aria-label="Breadcrumb"] a:has-text("TaskRun details")'
-
-    # Page header
-    TASKRUN_NAME_HEADING = "div.taskrun-details-page"
-
-    # Tabs
-    DETAILS_TAB = 'role=tab[name="Details"]'
-    YAML_TAB = 'role=tab[name="YAML"]'
-
-    # Details section
-    TASKRUN_DETAILS_HEADING = 'h2:has-text("TaskRun details")'
-    NAMESPACE_LINK = 'a[href^="/k8s/cluster/namespaces/"]'
-    STATUS_LABEL = 'dt:has-text("Status")'
-    TASK_LINK = 'dt:has-text("Task") + dd a'
-
-
-class TaskRunYamlPageLocators:
-    """Locators for the TaskRun YAML editor tab"""
+class TaskRunBasePageLocators:
+    """Common locators for TaskRun pages (shared UI elements across Details, YAML, Logs, Events)."""
 
     # Breadcrumb
     BREADCRUMB_TASKRUNS_LINK = 'nav[aria-label="Breadcrumb"] a:has-text("TaskRuns")'
@@ -197,9 +183,31 @@ class TaskRunYamlPageLocators:
     # Page header
     TASKRUN_NAME_HEADING = "h1"
 
-    # Tabs
+    # Tabs (common to all TaskRun pages)
     DETAILS_TAB = 'role=tab[name="Details"]'
     YAML_TAB = 'role=tab[name="YAML"]'
+    LOGS_TAB = 'role=tab[name="Logs"]'
+    EVENTS_TAB = 'role=tab[name="Events"]'
+
+
+class TaskRunDetailsPageLocators:
+    """Locators for the TaskRun Details page"""
+
+    # Details section
+    TASKRUN_DETAILS_HEADING = 'h2:has-text("TaskRun details")'
+    NAMESPACE_LINK = 'a[href^="/k8s/cluster/namespaces/"]'
+    STATUS_LABEL = 'dt:has-text("Status")'
+    TASK_LINK = 'dt:has-text("Task") + dd a'
+
+    # Field values for validation
+    NAMESPACE_VALUE = 'dt:has-text("Namespace") + dd a'
+    LABELS_SECTION = 'dt:has-text("Labels") + dd'
+    LABEL_BADGE = 'dt:has-text("Labels") + dd span.pf-v5-c-label__content'
+    ANNOTATIONS_COUNT = 'button:has-text("annotation")'
+
+
+class TaskRunYamlPageLocators:
+    """Locators for the TaskRun YAML editor tab"""
 
     # YAML editor
     YAML_EDITOR = ".monaco-editor"
@@ -216,3 +224,30 @@ class TaskRunYamlPageLocators:
     RELOAD_BUTTON = 'button:has-text("Reload")'
     CANCEL_BUTTON = 'button:has-text("Cancel")'
     DOWNLOAD_BUTTON = 'button:has-text("Download")'
+
+
+class TaskRunLogsPageLocators:
+    """Locators for the TaskRun Logs tab"""
+
+    # Step navigation
+    STEP_NAVIGATION = 'nav[aria-label="Global"]'
+    STEP_LINK = 'nav[aria-label="Global"] a'
+
+    # Logs toolbar buttons
+    DOWNLOAD_BUTTON = 'button:has-text("Download"):not(:has-text("all"))'
+    DOWNLOAD_ALL_BUTTON = 'button:has-text("Download all task logs")'
+    EXPAND_BUTTON = 'button:has-text("Expand")'
+
+    # Logs content area
+    LOGS_CONTAINER = 'div:has(> div:has-text("STEP-"))'
+
+
+class TaskRunEventsPageLocators:
+    """Locators for the TaskRun Events tab"""
+
+    # Events page specific
+    STREAMING_STATUS = 'generic:has-text("Streaming events")'
+    PAUSE_STREAMING_BUTTON = 'button:has-text("Pause event streaming")'
+    EVENTS_GRID = 'grid[aria-label="grid"]'
+    EVENT_ROW = 'grid[aria-label="grid"] > row'
+    SHOWING_COUNT = 'generic:has-text("Showing")'

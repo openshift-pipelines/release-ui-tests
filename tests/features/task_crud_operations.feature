@@ -26,6 +26,31 @@ Feature: Task CRUD Operations
 
 
   @sanity
+  Scenario Outline: Validate all the fields info in task details page for the task
+    When the user navigates to task details page for task "<task_name>"
+    Then the task details page should display the task name as "<task_name>"
+    And the task details page should display namespace as current project
+    And the task details page should display labels from YAML file "<yaml_file>"
+    And the task details page should display annotations from YAML file "<yaml_file>"
+
+    Examples:
+      | task_name   | yaml_file        |
+      | simple-task | simple_task.yaml |
+
+
+  @sanity
+  Scenario Outline: Validate YAML page content for created task
+    When the user navigates to task details page for task "<task_name>"
+    And the user navigates to YAML tab
+    Then the task YAML page should display the task name as "<task_name>"
+    And the task YAML page should display content from YAML file "<yaml_file>"
+
+    Examples:
+      | task_name   | yaml_file        |
+      | simple-task | simple_task.yaml |
+
+
+  @sanity
   Scenario Outline: Edit created task & validate changes in task details page
     When the user edits the task "<task_name>" with YAML file "<updated_yaml_file>"
     Then the task details page should display the task name as "<task_name>"
@@ -34,6 +59,7 @@ Feature: Task CRUD Operations
       |  task_name   | updated_yaml_file          |
       |  simple-task | simple_task_updated.yaml   |
 
+
   @smoke @sanity
   Scenario Outline:  Verify edited task appears in list
     Then the task "<task_name>" should appear in the tasks list
@@ -41,6 +67,32 @@ Feature: Task CRUD Operations
     Examples:
       | task_name    |
       | simple-task  |
+
+
+  @sanity
+  Scenario Outline: Validate all the fields info in task details page for edited task
+    When the user navigates to task details page for task "<task_name>"
+    Then the task details page should display the task name as "<task_name>"
+    And the task details page should display namespace as current project
+    And the task details page should display labels from YAML file "<yaml_file>"
+    And the task details page should display annotations from YAML file "<yaml_file>"
+
+    Examples:
+      | task_name   | yaml_file                |
+      | simple-task | simple_task_updated.yaml |
+
+
+  @sanity
+  Scenario Outline: Validate YAML page content for edited task
+    When the user navigates to task details page for task "<task_name>"
+    And the user navigates to YAML tab
+    Then the task YAML page should display the task name as "<task_name>"
+    And the task YAML page should display content from YAML file "<yaml_file>"
+
+    Examples:
+      | task_name   | yaml_file                |
+      | simple-task | simple_task_updated.yaml |
+
 
   @sanity
   Scenario Outline: Delete task and verify removal

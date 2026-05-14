@@ -1,3 +1,7 @@
+import logging
+import re
+from typing import Dict
+
 from playwright.async_api import Page
 
 from framework.config.config import Config
@@ -18,6 +22,7 @@ class TaskDetailsPage(BasePage):
         self.project_selector = ProjectSelector(page, config)
         self.favorites = Favorites(page, config)
         self.actions_menu = ActionsMenu(page, config)
+        self.logger = logging.getLogger(__name__)
 
     async def verify_on_page(self) -> bool:
         """
@@ -77,3 +82,72 @@ class TaskDetailsPage(BasePage):
         :return: bool: True if click succeeds.
         """
         return await self.click_element(self.locators.ANNOTATIONS_BUTTON)
+
+    async def get_namespace(self) -> str:
+        """
+        Get the namespace name from the task details page.
+
+        Uses inner_text() which automatically waits for element to be visible
+        before retrieving text content.
+
+        :return: str: Namespace name (e.g., 'ui-test')
+        :raises AssertionError: If namespace value is missing
+        :raises TimeoutError: If element is not visible within timeout
+        """
+        namespace_text = await self.page.inner_text(self.locators.NAMESPACE_VALUE)
+
+        if not namespace_text or not namespace_text.strip():
+            raise AssertionError("Namespace value is empty or missing in task details")
+
+        return namespace_text.strip()
+
+    async def get_labels(self) -> Dict[str, str]:
+        """
+        Get all labels from the task details page.
+
+        Uses inner_text() which automatically waits for elements to be visible
+        before retrieving text content.
+
+        :return: Dict[str, str]: Dictionary of label key-value pairs (empty if no labels)
+        :raises TimeoutError: If labels section is not visible within timeout
+        """
+        # Get all label badge elements
+        label_elements = await self.page.locator(self.locators.LABEL_BADGE).all()
+        labels = {}
+
+        for element in label_elements:
+            # inner_text() waits for element to be visible
+            label_text = await element.inner_text()
+            if label_text and "=" in label_text:
+                key, value = label_text.split("=", 1)
+                labels[key.strip()] = value.strip()
+            elif label_text:
+                # Label exists but doesn't have '=' separator - log warning
+                self.logger.warning(f"Label has unexpected format (missing '='): '{label_text}'")
+
+        return labels
+
+    async def get_annotations_count(self) -> int:
+        """
+        Get the count of annotations from the annotations button text.
+
+        Uses inner_text() which automatically waits for button to be visible
+        before retrieving text content.
+
+        :return: int: Number of annotations
+        :raises AssertionError: If button text is missing or format is unexpected
+        :raises TimeoutError: If button is not visible within timeout
+        """
+        button_text = await self.page.inner_text(self.locators.ANNOTATIONS_COUNT)
+
+        if not button_text:
+            raise AssertionError("Annotations button text is empty")
+
+        # Button text format: "3 annotations" or "1 annotation"
+        match = re.search(r"(\d+)\s+annotation", button_text)
+        if not match:
+            raise AssertionError(
+                f"Annotations button text has unexpected format: '{button_text}'. Expected format: 'N annotation(s)'"
+            )
+
+        return int(match.group(1))

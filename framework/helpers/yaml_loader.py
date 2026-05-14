@@ -5,7 +5,7 @@ Follows DRY principle - single source of truth for test data loading.
 """
 
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 
 class YamlLoader:
@@ -119,6 +119,27 @@ class YamlLoader:
                 "name": data.get("metadata", {}).get("name", ""),
                 "kind": data.get("kind", ""),
                 "apiVersion": data.get("apiVersion", ""),
+            }
+        except yaml.YAMLError as e:
+            raise ValueError(f"Invalid YAML content: {e}")
+
+    @classmethod
+    def get_labels_and_annotations(cls, yaml_content: str) -> Dict[str, Any]:
+        """
+        Extract labels and annotations from YAML content.
+
+        :param str yaml_content: YAML content string
+        :return: Dict[str, Any]: Dictionary with 'labels' (dict) and 'annotations' (dict)
+        :raises ValueError: If YAML content is invalid
+        """
+        import yaml
+
+        try:
+            data = yaml.safe_load(yaml_content)
+            metadata = data.get("metadata", {})
+            return {
+                "labels": metadata.get("labels", {}),
+                "annotations": metadata.get("annotations", {}),
             }
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML content: {e}")

@@ -34,6 +34,8 @@ from framework.ui_components.repositories_page import RepositoriesPage
 from framework.ui_components.taskruns.create_taskrun_page import CreateTaskRunPage
 from framework.ui_components.taskruns.task_runs_page import TaskRunsPage
 from framework.ui_components.taskruns.taskrun_details_page import TaskRunDetailsPage
+from framework.ui_components.taskruns.taskrun_events_page import TaskRunEventsPage
+from framework.ui_components.taskruns.taskrun_logs_page import TaskRunLogsPage
 from framework.ui_components.taskruns.taskrun_yaml_page import TaskRunYamlPage
 from framework.ui_components.tasks.create_task_page import CreateTaskPage
 from framework.ui_components.tasks.task_details_page import TaskDetailsPage
@@ -130,12 +132,14 @@ class TaskRunPages:
     """
     Container for TaskRun detail pages (specific taskrun resource).
 
-    Navigation: Tasks → TaskRuns tab → Click taskrun name → Details/YAML tabs
+    Navigation: Tasks → TaskRuns tab → Click taskrun name → Details/YAML/Logs/Events tabs
     """
 
     def __init__(self, page: Page, config: Config) -> None:
         self.details = TaskRunDetailsPage(page, config)
         self.yaml = TaskRunYamlPage(page, config)
+        self.logs = TaskRunLogsPage(page, config)
+        self.events = TaskRunEventsPage(page, config)
 
 
 class TasksPages:
