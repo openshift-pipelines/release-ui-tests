@@ -109,23 +109,30 @@ class BuilderViewLocators:
     """Locators specific to the Pipeline Builder's visual form view."""
 
     # Form fields
-    PIPELINE_NAME_INPUT = 'input[type="text"]'
+    PIPELINE_NAME_INPUT = "input#form-input-formData-name-field"
 
-    # Tasks section
-    ADD_TASK_BUTTON = 'button:has-text("Add task"), div:has-text("Add task")'
-    ADD_FINALLY_TASK_BUTTON = 'div:has-text("Add finally task")'
+    # Tasks - SVG element in pipeline builder canvas
+    ADD_TASK_BUTTON = '[data-test="task-list"]'
+    TASK_NODE_TEMPLATE = '[data-test="builder-node {task_name}"]'
+    TASK_NAME_INPUT = "input#task-name"
 
-    # Parameters section
+    # Task parameters - dynamic locators based on task/param index
+    TASK_PARAM_TEMPLATE = "textarea#form-input-formData-tasks-{task_index}-params-{param_index}-value-field"
+
+    # Task workspaces - dynamic locators based on workspace type
+    TASK_WORKSPACE_TEMPLATE = '[data-test="workspaces {workspace_type}"]'
+
+    # Parameters & Workspaces
     ADD_PARAMETER_BUTTON = 'button:has-text("Add parameter")'
-
-    # Workspaces section
     ADD_WORKSPACE_BUTTON = 'button:has-text("Add workspace")'
+    PIPELINE_PARAM_NAME_TEMPLATE = "input#form-input-formData-params-{param_index}-name-field"
+    PIPELINE_PARAM_DESC_TEMPLATE = "input#form-input-formData-params-{param_index}-description-field"
+    PIPELINE_PARAM_DEFAULT_TEMPLATE = "textarea#form-input-formData-params-{param_index}-default-field"
+    PIPELINE_WORKSPACE_NAME_TEMPLATE = "input#form-input-formData-workspaces-{workspace_index}-name-field"
 
     # Quick search dialog
-    QUICK_SEARCH_DIALOG = 'dialog[aria-label="Quick search"]'
-    QUICK_SEARCH_INPUT = 'input[placeholder="Add task..."]'
-    QUICK_SEARCH_LIST = 'list[aria-label="Quick search list"]'
-    ADD_TASK_FROM_SEARCH_BUTTON = 'button:has-text("Add")'
+    QUICK_SEARCH_INPUT = 'input[data-test="input"]'
+    ADD_TASK_FROM_SEARCH_BUTTON = '[role="dialog"][aria-label="Quick search"] button:has-text("Add")'
 
 
 class YamlViewLocators:

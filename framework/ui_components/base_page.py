@@ -131,6 +131,25 @@ class BasePage:
         except PlaywrightTimeoutError:
             return False
 
+    async def is_element_enabled(self, locator: str, timeout: Optional[int] = None) -> bool:
+        """
+        Checks if an element is enabled (not disabled). Waits for the element to be visible first,
+        then checks if it is enabled.
+        :param str locator: The locator string to identify the element.
+        :param Optional[int] timeout: Optional timeout in milliseconds. If not provided, uses the
+            default timeout set on the page.
+        :return: bool: True if the element is enabled, False if disabled or timeout occurs.
+        """
+        try:
+            loc = self.page.locator(locator)
+            if timeout is not None:
+                await loc.wait_for(state="visible", timeout=timeout)
+            else:
+                await loc.wait_for(state="visible")
+            return await loc.is_enabled()
+        except PlaywrightTimeoutError:
+            return False
+
     async def wait_for_url_to_endwith(self, page_suffix: str, timeout: Optional[int] = None) -> bool:
         """
         Uses page.wait_for_url(pattern) to wait for the URL to match the specified pattern (ending
