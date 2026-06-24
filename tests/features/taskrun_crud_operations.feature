@@ -35,7 +35,15 @@ Feature: TaskRun CRUD Operations
       | taskrun_name      | taskrun_status |
       | simple-taskrun-   | succeeded      |
 
-  @smoke @sanity
+  @skip @known_bug
+  # KNOWN BUG: TaskRun delete operation fails in OpenShift Console
+  # Issue: Deleted Taskrun does not disappear from taskruns page (even after switching pages)
+  # Affects: OSP 1.21.x, 1.22.x, 1.23.x
+  # Root Cause: Deleted Taskrun takes higher time to disappear from taskruns list
+  # Tracking: SRVKP-12032
+  # Expected Fix: OSP 1.24.x
+  # Last Verified: 2026-06-22
+  # TODO: Re-enable this test once bug is fixed and verified
   Scenario Outline: Delete TaskRun and verify removal
     When the user navigates to TaskRuns tab
     And the user deletes the taskrun "<taskrun_name>"

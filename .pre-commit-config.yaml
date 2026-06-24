@@ -2,7 +2,7 @@ repos:
   # Ruff - Fast Python linter and formatter
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version - update to latest stable
-    rev: v0.15.17
+    rev: v0.15.18
     hooks:
       # Run the linter
     -   id: ruff
