@@ -63,6 +63,11 @@ class Config(object, metaclass=Singleton):
         except ValueError:
             self._timeout_ms = 90000
 
+        # Artifact capture settings
+        self._capture_screenshots = os.getenv("CAPTURE_SCREENSHOTS", "false").lower() == "true"
+        self._capture_recordings = os.getenv("CAPTURE_RECORDINGS", "false").lower() == "true"
+        self._artifacts_dir = os.getenv("ARTIFACTS_DIR", "/tmp/test-artifacts")
+
         # Fail fast if critical parameters are missing
         missing = []
         if not self._base_url:
@@ -111,3 +116,30 @@ class Config(object, metaclass=Singleton):
         :return: int: The timeout value in milliseconds.
         """
         return self._timeout_ms
+
+    @property
+    def capture_screenshots(self) -> bool:
+        """
+        Whether to capture screenshots on test failure.
+        Value is read from CAPTURE_SCREENSHOTS environment variable, defaults to False.
+        :return: bool: True if screenshot capture is enabled.
+        """
+        return self._capture_screenshots
+
+    @property
+    def capture_recordings(self) -> bool:
+        """
+        Whether to record video of browser sessions.
+        Value is read from CAPTURE_RECORDINGS environment variable, defaults to False.
+        :return: bool: True if video recording is enabled.
+        """
+        return self._capture_recordings
+
+    @property
+    def artifacts_dir(self) -> str:
+        """
+        Directory path where test artifacts (screenshots, recordings) are saved.
+        Value is read from ARTIFACTS_DIR environment variable, defaults to /tmp/test-artifacts.
+        :return: str: The artifacts directory path.
+        """
+        return self._artifacts_dir
