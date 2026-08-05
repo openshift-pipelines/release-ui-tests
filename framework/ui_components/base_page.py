@@ -265,7 +265,7 @@ class BasePage:
             except PlaywrightTimeoutError:
                 pass
 
-        if not await self.is_visible(locator):
+        if not await self.is_visible(locator, timeout=10000):
             raise AssertionError(
                 f"Data load verification failed for {tab_name}: Data element ({locator}) "
                 f"did not become visible within the timeout."

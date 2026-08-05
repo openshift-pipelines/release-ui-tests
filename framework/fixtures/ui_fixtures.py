@@ -1,4 +1,5 @@
 import asyncio
+import os
 from collections.abc import AsyncGenerator
 from typing import Any, Dict
 
@@ -39,24 +40,52 @@ def playwright_event_loop(request: FixtureRequest) -> asyncio.AbstractEventLoop:
 
 
 @pytest.fixture(scope="session")
-def browser_context_args(browser_context_args: Dict[str, Any], request: FixtureRequest) -> Dict[str, Any]:
+def browser_type_launch_args(browser_type_launch_args: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Extra Chromium launch flags for CI/Docker reliability.
+
+    --lang helps Chromium Intl match OpenShift Console expectations inside
+    minimal container images that default to C.UTF-8.
+    """
+    args = list(browser_type_launch_args.get("args", []))
+    for flag in ("--lang=en-US", "--disable-dev-shm-usage", "--no-sandbox"):
+        if flag not in args:
+            args.append(flag)
+    return {**browser_type_launch_args, "args": args}
+
+
+@pytest.fixture(scope="session")
+def browser_context_args(
+    browser_context_args: Dict[str, Any], request: FixtureRequest, config: Config
+) -> Dict[str, Any]:
     """
     fixture that configures browser context arguments,
     By default, SSL errors are ignored (True). Set --ignore-ssl-errors=false to disable.
     Also maximizes the browser window by setting a large viewport size (1920x1080).
-    Note: Navigation timeout is set separately in the context fixture since it's not a valid
-    parameter for browser.new_context().
+    When CAPTURE_RECORDINGS=true, enables Playwright video recording.
     :param Dict[str, Any] browser_context_args: Default browser context arguments from Playwright.
     :param FixtureRequest request: Pytest fixture request object (automatically injected).
-    :return: Dict[str, Any]: Updated browser context arguments with SSL and viewport configuration.
+    :param Config config: Config object containing application configuration.
+    :return: Dict[str, Any]: Updated browser context arguments with SSL, viewport, and recording config.
     """
     ignore_ssl = request.config.getoption("--ignore-ssl-errors", default=True)
 
-    return {
+    ctx_args = {
         **browser_context_args,
         "ignore_https_errors": ignore_ssl,
-        "viewport": {"width": 1920, "height": 1080},  # Maximize browser window
+        "viewport": {"width": 1920, "height": 1080},
+        # OpenShift Console i18n requires a real BCP-47 locale; without it the SPA
+        # can throw and paint only a blank gray background (blank recordings).
+        "locale": "en-US",
     }
+
+    if config.capture_recordings:
+        videos_dir = os.path.join(config.artifacts_dir, "recordings")
+        os.makedirs(videos_dir, exist_ok=True)
+        ctx_args["record_video_dir"] = videos_dir
+        ctx_args["record_video_size"] = {"width": 1920, "height": 1080}
+
+    return ctx_args
 
 
 @pytest.fixture(scope="module")
@@ -87,26 +116,26 @@ async def playwright_page(
     """
     context = await browser.new_context(**browser_context_args)
     pw_page = await context.new_page()
+    recording = "record_video_dir" in browser_context_args
     try:
         yield pw_page
     finally:
-        # Aggressive immediate cleanup to prevent browser hanging open
-        # Close page first (visible window), then context (underlying resources)
-        import asyncio
+        # Close page first (visible window), then context (underlying resources).
+        # Video is finalized on context.close(); a short timeout silently drops
+        # recordings in slower environments (Docker/CI), so allow more time when
+        # CAPTURE_RECORDINGS is enabled and surface context.close failures.
+        close_timeout = 60.0 if recording else 5.0
 
         try:
-            # Close page with short timeout to prevent hanging
-            await asyncio.wait_for(pw_page.close(), timeout=5.0)
+            await asyncio.wait_for(pw_page.close(), timeout=close_timeout)
         except (asyncio.TimeoutError, Exception):
-            # Force close if taking too long
             pass
 
         try:
-            # Close context with timeout
-            await asyncio.wait_for(context.close(), timeout=5.0)
+            await asyncio.wait_for(context.close(), timeout=close_timeout)
         except (asyncio.TimeoutError, Exception):
-            # Force close if taking too long
-            pass
+            if recording:
+                raise
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="session")

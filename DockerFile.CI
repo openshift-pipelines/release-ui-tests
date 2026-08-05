@@ -1,0 +1,41 @@
+FROM quay.io/fedora/fedora:44
+
+RUN dnf update -y &&\
+    dnf install -y --setopt=tsflags=nodocs git python-unversioned-command python3 python3-pip \
+        libxkbcommon alsa-lib atk at-spi2-atk cups-libs libdrm libXcomposite \
+        libXdamage libXrandr mesa-libgbm nss nss-util nspr pango libXfixes \
+        libXcursor libXext libXi libXtst libwayland-client libwayland-egl \
+        libwayland-server cairo dbus-libs expat libxcb wget \
+        glibc-langpack-en langpacks-en fontconfig && \
+    dnf clean all -y && rm -fR /var/cache/dnf
+
+# OpenShift Console uses Intl APIs; without a real locale Chromium throws
+# "Incorrect locale information provided" and the SPA paints a blank gray page
+# (screenshots/recordings look empty even though tests may still find some DOM).
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+
+# Default artifact path (override at runtime with -e ARTIFACTS_DIR=...).
+ENV ARTIFACTS_DIR=/tmp/test-artifacts
+
+ENV OC_VERSION=4.21
+RUN wget https://mirror.openshift.com/pub/openshift-v4/clients/ocp/fast-${OC_VERSION}/openshift-client-linux.tar.gz \
+    -O /tmp/openshift-client.tar.gz &&\
+    tar xzf /tmp/openshift-client.tar.gz -C /usr/bin oc &&\
+    rm /tmp/openshift-client.tar.gz
+
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
+    rm /tmp/requirements.txt
+
+# Install browsers + ffmpeg (needed for Playwright video) to a shared path so
+# OpenShift arbitrary UIDs (non-root, gid 0) can find and execute them.
+# Default Playwright cache is /root/.cache/ms-playwright, which is invisible
+# when HOME is unset/empty under a random UID.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN mkdir -p /ms-playwright "${ARTIFACTS_DIR}" && \
+    playwright install chromium && \
+    chmod -R 777 /ms-playwright && \
+    chgrp -R 0 /tmp && \
+    chmod -R g=u /tmp
