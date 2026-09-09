@@ -43,14 +43,22 @@ async def _perform_cli_login(openshift_cli: OpenShiftCLI) -> None:
     """
     Perform CLI login using available credentials.
 
-    Tries token-based login first, then falls back to username/password.
+    Uses a 3-tier strategy:
+    1. Check existing KUBECONFIG session (CI/Prow injects this)
+    2. Try API_URL env var if set (explicit override)
+    3. Try OC_TOKEN + OC_API_URL or derive API URL from CONSOLE_URL
 
     :param OpenShiftCLI openshift_cli: CLI wrapper instance
     :raises RuntimeError: If login fails
     """
+    # 1. Check if already authenticated via existing KUBECONFIG
+    if await openshift_cli.is_logged_in():
+        logger.info("Already authenticated via existing KUBECONFIG, skipping login.")
+        return
+
     logger.info("Not currently logged in to OpenShift cluster - attempting login")
 
-    # Try method 1: Login with token (if OC_TOKEN and OC_API_URL are set)
+    # 2. Try login with token (if OC_TOKEN and OC_API_URL are set)
     if openshift_cli.token and openshift_cli.api_url:
         logger.info("Attempting login with OC_TOKEN")
         login_success = await openshift_cli.login()
@@ -60,21 +68,25 @@ async def _perform_cli_login(openshift_cli: OpenShiftCLI) -> None:
             raise RuntimeError("Login with token failed. Check OC_TOKEN and OC_API_URL values")
         return
 
-    # Try method 2: Login with username/password (from Config/env vars)
-    logger.info("OC_TOKEN not set - attempting login with username/password from Config")
+    # 3. Try username/password login
+    logger.info("OC_TOKEN not set - attempting login with username/password")
     try:
         config = Config()
 
-        # Derive API URL from console URL
-        api_url = derive_api_url_from_console_url(config.base_url)
+        # 3a. Use API_URL env var if set (explicit override)
+        api_url = os.getenv("API_URL")
+        if api_url:
+            logger.info(f"Using API_URL env var: {api_url}")
+        else:
+            # 3b. Derive from CONSOLE_URL
+            api_url = derive_api_url_from_console_url(config.base_url)
+            if not api_url:
+                raise RuntimeError(
+                    f"Could not derive API URL from console URL: {config.base_url}. "
+                    "Set API_URL environment variable explicitly."
+                )
+            logger.info(f"Derived API URL: {api_url}")
 
-        if not api_url:
-            raise RuntimeError(
-                f"Could not derive API URL from console URL: {config.base_url}. "
-                "Set OC_API_URL environment variable explicitly."
-            )
-
-        logger.info(f"Using API URL: {api_url}")
         login_success = await openshift_cli.login_with_credentials(
             api_url=api_url, username=config.username, password=config.password
         )
@@ -82,7 +94,7 @@ async def _perform_cli_login(openshift_cli: OpenShiftCLI) -> None:
         if login_success:
             logger.info(f"Successfully logged in as {config.username}")
         else:
-            raise RuntimeError("Login with username/password failed. Check CONSOLE_USERNAME and CONSOLE_PASSWORD")
+            raise RuntimeError(f"Login with username/password failed against {api_url}")
 
     except ValueError as e:
         raise RuntimeError(
@@ -103,7 +115,7 @@ def openshift_cli() -> OpenShiftCLI:
     """
     # Get token from environment (optional - may already be logged in via oc login)
     token = os.getenv("OC_TOKEN")
-    api_url = os.getenv("OC_API_URL")  # e.g., https://api.cluster.example.com:6443
+    api_url = os.getenv("API_URL") or os.getenv("OC_API_URL")
 
     cli = OpenShiftCLI(api_url=api_url, token=token)
     logger.info("OpenShift CLI instance created")
