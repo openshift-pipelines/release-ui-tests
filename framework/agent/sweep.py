@@ -26,6 +26,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 import yaml
 
 from framework.agent import locator_registry as registry
+from framework.agent import outcomes
 from framework.agent.audit_map import audit
 from framework.agent.verify_locators import detect_version, verify_pages
 
@@ -238,6 +239,17 @@ def _print_drifted(drifted: List[Tuple[str, str, str, str]]) -> None:
         print(f"      {selector}")
 
 
+def drifted_count(pages: Dict[str, Dict[str, Any]], specs: List[Dict[str, Any]]) -> int:
+    by_key = {s_["page_key"]: s_ for s_ in specs}
+    total = 0
+    for key, entry in pages.items():
+        if entry["error"]:
+            continue
+        missing, ambiguous, _ = classify(entry["results"], set(by_key[key]["conditional"]))
+        total += len(missing) + len(ambiguous)
+    return total
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--map", type=Path, default=MAP_PATH, help="Page map YAML")
@@ -253,7 +265,12 @@ def main() -> int:
     parser.add_argument("--headed", action="store_true", help="Show the browser")
     parser.add_argument("--skip-audit", action="store_true", help="Sweep even if the page map fails its audit")
     parser.add_argument("--json", type=Path, help="Write the full result set here")
-    parser.add_argument("--save", action="store_true", help="Record passing locators in the registry")
+    parser.add_argument(
+        "--no-save",
+        action="store_true",
+        help="Do not record passing locators. Saving is the default: a verification that is "
+        "thrown away has to be repeated, so the registry never accumulates.",
+    )
     args = parser.parse_args()
 
     if not args.skip_audit and audit(args.map) != 0:
@@ -278,7 +295,7 @@ def main() -> int:
         args.json.write_text(json.dumps({"version": version, "pages": pages, "skipped": skipped}, indent=2))
         print(f"\nFull results written to {args.json}")
 
-    if args.save:
+    if not args.no_save:
         by_key = {s["page_key"]: s for s in specs}
         saved = 0
         for key, entry in pages.items():
@@ -288,6 +305,15 @@ def main() -> int:
                 saved += len(good)
         print(f"Recorded {saved} verified locator(s) in {registry.REGISTRY_PATH}")
 
+    probed = sum(len(e["results"]) for e in pages.values())
+    outcomes.record(
+        "sweep",
+        version=version,
+        pages=len(pages),
+        probed=probed,
+        drifted=drifted_count(pages, specs),
+        unreachable=sum(1 for e in pages.values() if e["error"]),
+    )
     return exit_code
 
 

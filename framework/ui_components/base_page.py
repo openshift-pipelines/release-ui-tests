@@ -134,6 +134,32 @@ class BasePage:
             logger.info("[locator-timeout] %s", locator)
             return False
 
+    async def exists(self, locator: str, timeout: Optional[int] = None) -> bool:
+        """Is the element in the DOM? Waits before answering "no".
+
+        Playwright auto-waits on actions such as click and fill, but NOT on queries:
+        `locator.count()` answers about this instant. Branching on it reports a control
+        as missing simply because its component has not rendered yet, and the branch is
+        then silently skipped. Prefer this over a bare `.count() > 0` presence check.
+
+        Use `is_visible` instead when the element must be interactable rather than
+        merely present.
+
+        :param str locator: The locator string to identify the element.
+        :param Optional[int] timeout: Timeout in milliseconds; page default when omitted.
+        :return: bool: True if the element attaches within the timeout.
+        """
+        try:
+            loc = self.page.locator(locator)
+            if timeout is not None:
+                await loc.first.wait_for(state="attached", timeout=timeout)
+            else:
+                await loc.first.wait_for(state="attached")
+            return True
+        except PlaywrightTimeoutError:
+            logger.info("[locator-timeout] %s", locator)
+            return False
+
     async def is_element_enabled(self, locator: str, timeout: Optional[int] = None) -> bool:
         """
         Checks if an element is enabled (not disabled). Waits for the element to be visible first,

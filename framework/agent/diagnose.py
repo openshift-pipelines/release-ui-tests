@@ -22,7 +22,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
-from framework.agent.verify_locators import PageNotReady, verify_pages
+from framework.agent import locator_registry as registry
+from framework.agent import outcomes
+from framework.agent.verify_locators import PageNotReady, detect_version, verify_pages
 from framework.config.config import Config
 
 PAGE_MAP = Path(__file__).resolve().parents[2] / ".agent" / "sweep" / "page_map.yaml"
@@ -217,6 +219,7 @@ def _verdict(
 def diagnose(target: Optional[str], extra: List[str]) -> Dict[str, Any]:
     code, output = run_pytest(target, extra)
     if code == 0:
+        outcomes.record("diagnose", verdict="passed", target=target or "sanity")
         return {
             "verdict": "passed",
             "reason": "Test passed.",
@@ -230,6 +233,7 @@ def diagnose(target: Optional[str], extra: List[str]) -> Dict[str, Any]:
     context = load_failure_context(config, failure["nodeid"])
     note = ""
     probe = None
+    page_key = None
 
     if not context:
         note = "No failure context was recorded, so the failing URL is unknown."
@@ -256,7 +260,32 @@ def diagnose(target: Optional[str], extra: List[str]) -> Dict[str, Any]:
     result = classify(failure, probe, note)
     result["failure_url"] = context["url"] if context else None
     result["note"] = note
+
+    if probe and page_key:
+        _bank_proven_locators(page_key, context["url"], probe["results"])
+    outcomes.record(
+        "diagnose",
+        verdict=result["verdict"],
+        nodeid=failure["nodeid"],
+        page=page_key,
+        selectors=failure["selectors"][:3],
+    )
     return result
+
+
+def _bank_proven_locators(page_key: str, url: str, results: Dict[str, Dict[str, Any]]) -> None:
+    """Keep what the re-probe established, so the next failure does not re-litigate it.
+
+    Diagnosis already paid the cost of loading the page and resolving these selectors;
+    discarding that is why the registry stayed almost empty.
+    """
+    proven = {
+        name: result
+        for name, result in results.items()
+        if result["usable"] and not registry.is_templated(result["selector"])
+    }
+    if proven:
+        registry.record(page_key, detect_version(), url, proven)
 
 
 def main() -> int:

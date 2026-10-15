@@ -1,5 +1,147 @@
 {
   "entries": {
+    "pipelines.list.base": {
+      "url": "/pipelines/ns/openshift",
+      "versions": {
+        "ocp4.22.16-osp1.24.0": {
+          "locators": {
+            "CLEAR_ALL_FILTERS_BUTTON": {
+              "confidence": 0.95,
+              "error": null,
+              "expect_many": false,
+              "match_count": 1,
+              "probed_selector": null,
+              "selector": "[data-ouia-component-id=\"DataViewToolbar-clear-all-filters\"]",
+              "strategy": "data-test",
+              "templated": false,
+              "usable": true,
+              "visible_count": 0
+            },
+            "CREATE_BUTTON": {
+              "confidence": 0.8,
+              "error": null,
+              "expect_many": false,
+              "match_count": 1,
+              "probed_selector": null,
+              "selector": "button:has-text(\"Create\")",
+              "strategy": "text",
+              "templated": false,
+              "usable": true,
+              "visible_count": 1
+            },
+            "DATA_GRID": {
+              "confidence": 0.95,
+              "error": null,
+              "expect_many": false,
+              "match_count": 1,
+              "probed_selector": null,
+              "selector": "table[data-ouia-component-type=\"PF6/Table\"]",
+              "strategy": "data-test",
+              "templated": false,
+              "usable": true,
+              "visible_count": 1
+            },
+            "FILTER_BUTTON": {
+              "confidence": 0.75,
+              "error": null,
+              "expect_many": false,
+              "match_count": 1,
+              "probed_selector": null,
+              "selector": "button.pf-m-full-width.pf-v6-c-menu-toggle",
+              "strategy": "css",
+              "templated": false,
+              "usable": true,
+              "visible_count": 1
+            },
+            "KEBAB_MENU_BUTTON": {
+              "confidence": 0.9,
+              "error": null,
+              "expect_many": true,
+              "match_count": 27,
+              "probed_selector": null,
+              "selector": "button[aria-label=\"Actions\"]",
+              "strategy": "aria",
+              "templated": false,
+              "usable": true,
+              "visible_count": 27
+            },
+            "PIPELINES_HEADER": {
+              "confidence": 0.8,
+              "error": null,
+              "expect_many": false,
+              "match_count": 1,
+              "probed_selector": null,
+              "selector": "h1:has-text(\"Pipelines\")",
+              "strategy": "text",
+              "templated": false,
+              "usable": true,
+              "visible_count": 1
+            },
+            "PIPELINES_TAB": {
+              "confidence": 0.9,
+              "error": null,
+              "expect_many": false,
+              "match_count": 1,
+              "probed_selector": null,
+              "selector": "a[role=\"tab\"]:has-text(\"Pipelines\")",
+              "strategy": "role",
+              "templated": false,
+              "usable": true,
+              "visible_count": 1
+            },
+            "PIPELINE_RUNS_TAB": {
+              "confidence": 0.75,
+              "error": null,
+              "expect_many": false,
+              "match_count": 1,
+              "probed_selector": null,
+              "selector": "a[href^=\"/pipelines/ns/\"][href$=\"/pipeline-runs\"]",
+              "strategy": "css",
+              "templated": false,
+              "usable": true,
+              "visible_count": 1
+            },
+            "REPOSITORIES_TAB": {
+              "confidence": 0.75,
+              "error": null,
+              "expect_many": false,
+              "match_count": 1,
+              "probed_selector": null,
+              "selector": "a[href^=\"/pipelines/ns/\"][href$=\"/repositories\"]",
+              "strategy": "css",
+              "templated": false,
+              "usable": true,
+              "visible_count": 1
+            },
+            "SEARCH_INPUT": {
+              "confidence": 0.9,
+              "error": null,
+              "expect_many": false,
+              "match_count": 1,
+              "probed_selector": null,
+              "selector": "input[aria-label=\"Search input\"]",
+              "strategy": "aria",
+              "templated": false,
+              "usable": true,
+              "visible_count": 1
+            },
+            "SETUP_GITHUB_APP_LINK": {
+              "confidence": 0.8,
+              "error": null,
+              "expect_many": false,
+              "match_count": 1,
+              "probed_selector": null,
+              "selector": "a:has-text(\"Setup GitHub App\")",
+              "strategy": "text",
+              "templated": false,
+              "usable": true,
+              "visible_count": 1
+            }
+          },
+          "verified_at": "2026-10-14T14:58:02+00:00"
+        }
+      }
+    },
     "tasks.list": {
       "url": "/tasks/ns/openshift-pipelines",
       "versions": {

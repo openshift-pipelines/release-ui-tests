@@ -16,6 +16,8 @@ from fnmatch import fnmatch
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
 
+from framework.agent import outcomes
+
 # A heal may touch the test, the selectors it uses, and the data it feeds in. Anything
 # else - fixtures, config, the agent's own tooling, CI - changes the meaning of a pass
 # rather than fixing the failure, so it must be a deliberate human edit.
@@ -112,6 +114,7 @@ def stability(target: Sequence[str], runs: int) -> int:
         print(f"  run {i}/{runs}: {'pass' if ok else 'FAIL'}", flush=True)
 
     passed = sum(results)
+    outcomes.record("stability", runs=runs, passed=passed, target=" ".join(target))
     print(f"\n{passed}/{runs} runs passed.")
     if passed == runs:
         print("Stable.")

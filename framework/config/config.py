@@ -77,6 +77,7 @@ class Config(object, metaclass=Singleton):
         self._operator_version = os.getenv("OPERATOR_VERSION", "")
         self._channel = os.getenv("CHANNEL", "latest")
         self._konflux_index_image = os.getenv("KONFLUX_INDEX_IMAGE", "")
+        self._nightly_override = os.getenv("NIGHTLY", "").strip().lower()
 
         if self._operator_environment in ("pre-stage", "stage"):
             self._catalog_source = os.getenv("CATALOG_SOURCE", "custom-operators")
@@ -189,6 +190,18 @@ class Config(object, metaclass=Singleton):
     @property
     def konflux_index_image(self) -> str:
         return self._konflux_index_image
+
+    @property
+    def nightly(self) -> bool:
+        """Is this a nightly Konflux build?
+
+        Nightly indexes carry the `:nightly` tag, and NIGHTLY=true forces it for an
+        index that does not. Nightly installs take the channel head: OPERATOR_VERSION
+        is a channel-ish value such as "5.0" there, so it must never be pinned.
+        """
+        if self._nightly_override in ("true", "yes", "1", "on"):
+            return True
+        return self._konflux_index_image.endswith(":nightly")
 
     @property
     def install_method(self) -> str:

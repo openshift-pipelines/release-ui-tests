@@ -461,15 +461,27 @@ async def _install_operator_via_ui(
 ) -> None:
     from framework.ui_components.operators.operator_install_page import OperatorInstallPage
 
-    logger.info("[OSP Setup] [2/5 Install] Installing operator via UI...")
+    nightly = config.nightly
+    # Nightly installs the channel head; OPERATOR_VERSION is channel-ish there ("5.0")
+    # and must not be pinned.
+    version = None if nightly else (config.operator_version or None)
+    logger.info(
+        "[OSP Setup] [2/5 Install] Installing operator via UI (nightly=%s, version=%s)...",
+        nightly,
+        version or "<channel head>",
+    )
     install_page = OperatorInstallPage(ui_page, config)
     success = await install_page.install_operator(
         catalog_source=config.catalog_source,
         channel=config.channel,
+        version=version,
+        nightly=nightly,
     )
     if not success:
         raise RuntimeError("UI-based operator install failed")
 
+    # The UI selects Automatic approval, so OLM creates the CSV without an InstallPlan
+    # approval step (unlike the CLI path, which uses Manual).
     logger.info("[OSP Setup] [2/5 Install] UI install triggered, waiting for CSV via CLI...")
     if not await _wait_for_csv(cli, start, deadline):
         raise RuntimeError(f"Operator CSV did not reach Succeeded within timeout ({_elapsed_str(start, deadline)})")
@@ -508,14 +520,11 @@ async def _ensure_osp(
     logger.info("[OSP Setup] [1/5 Check] Checking if operator is already installed...")
     if await _is_osp_installed(cli):
         logger.info("[OSP Setup] [1/5 Check] Operator already installed with CSV Succeeded.")
-    elif ui_page and not operator_version:
+    elif ui_page:
+        # The Software Catalog panel exposes a version selector, so pinning no longer
+        # forces a fall back to the CLI path.
         await _install_operator_via_ui(ui_page, cli, config, start, deadline)
     else:
-        if ui_page and operator_version:
-            logger.warning(
-                "[OSP Setup] Version pinning (OPERATOR_VERSION=%s) requires CLI install. Falling back to CLI method.",
-                operator_version,
-            )
         await _install_operator(cli, channel, catalog_source, operator_version, nightly, start, deadline)
 
     await _validate_post_install(cli, start, deadline)

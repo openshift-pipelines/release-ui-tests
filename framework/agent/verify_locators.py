@@ -4,7 +4,7 @@ Every selector is resolved with the same Playwright engine the tests run on, so 
 selector that passes here cannot be a hallucination: it matched a real element.
 
 Usage:
-    python -m framework.agent.verify_locators candidates.json [--save] [--headed]
+    python -m framework.agent.verify_locators candidates.json [--headed] [--no-save]
 
 Input file:
     {
@@ -339,7 +339,11 @@ def report(page_key: str, version: str, results: Dict[str, Dict[str, Any]]) -> i
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("candidates", type=Path, help="JSON file describing the page and candidate locators")
-    parser.add_argument("--save", action="store_true", help="Record verified locators in the registry")
+    parser.add_argument(
+        "--no-save",
+        action="store_true",
+        help="Do not record verified locators. Saving is the default - a verification thrown away has to be repeated.",
+    )
     parser.add_argument("--headed", action="store_true", help="Show the browser while verifying")
     parser.add_argument("--version", help="Override the detected product version key")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable results on stdout")
@@ -359,7 +363,7 @@ def main() -> int:
     else:
         exit_code = report(spec["page_key"], version, results)
 
-    if args.save:
+    if not args.no_save:
         verified = {n: r for n, r in results.items() if r["usable"]}
         if verified:
             registry.record(spec["page_key"], version, spec["url"], verified)

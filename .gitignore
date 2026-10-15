@@ -30,6 +30,11 @@ exec/
 venv/
 .pytest_cache/
 
+# Append-only run telemetry. The locator registry is shared because verified selectors
+# are worth having; this is per-machine history and every contributor would conflict on
+# the last line of it.
+.agent/memory/outcomes.jsonl
+
 # Generated, not written: a point-in-time snapshot that goes stale immediately
 docs/qa-forge-agent-architecture.html
 openshift-console-snapshot.md
