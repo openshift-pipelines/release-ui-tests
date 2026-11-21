@@ -1,0 +1,334 @@
+# Maps each locator class to a live page so the sweep can verify its constants.
+#
+# Apply .agent/sweep/seed.yaml first - detail pages render nothing without a
+# resource to show, and list toolbars do not render in the empty state.
+#
+# ready:    selector proving the page finished rendering. List pages MUST wait on
+#           the table: the <h1> appears several seconds before the grid does.
+# samples:  values for templated {placeholder} locators.
+# many:     locators that are supposed to repeat because callers scope them to a row.
+# skip:     locators only reachable after an interaction (open a menu, add a node).
+#           They are listed, not probed, so they never show up as false drift.
+
+namespace: qa-forge-sweep
+
+# Skipped on every page. Menu items only exist once their menu is open, so probing
+# them by navigation alone reports drift that is not real.
+always_skip:
+  - "*_MENU_ITEM"
+
+
+ready_profiles:
+  # Must be the table alone. Accepting the empty-state here fires ready during the
+  # brief empty render before data arrives, and every probe then reports "missing".
+  list: 'table[data-ouia-component-type="PF6/Table"]'
+  empty_list: 'div.pf-v6-c-empty-state__body, [data-test="empty-box-body"], table[data-ouia-component-type="PF6/Table"]'
+  # Both must be page-specific. An h1 or a bare textarea also exists on a 404, so a
+  # missing resource would otherwise be probed as though the page had loaded.
+  detail: "dl"
+  yaml: ".monaco-editor"
+  form: ".monaco-editor, form, input"
+  # The real container is pf-v6-c-log-viewer; a bare `.log-viewer` never matches it.
+  logs: "div.pf-v6-c-log-viewer, li.odc-pipeline-run-logs__navitem"
+  overview: "h1, .co-dashboard-card, .pf-v6-c-card"
+  catalog: 'input[placeholder="Filter by keyword..."]'
+
+pages:
+  # ---------- Tasks ----------
+  - key: tasks.list.base
+    locators: framework.locators.tasks:TasksBasePageLocators
+    url: /tasks/ns/{ns}
+    ready: list
+    many: [KEBAB_MENU_BUTTON]
+    # NO_DATA_MESSAGE is the empty-state body - mutually exclusive with seeded rows.
+    skip: [NO_DATA_MESSAGE]
+
+  - key: tasks.list
+    locators: framework.locators.tasks:TasksPageLocators
+    url: /tasks/ns/{ns}
+    ready: list
+    samples:
+      TASK_ROW_BY_NAME: {task_name: probe-task}
+
+  - key: taskruns.list
+    locators: framework.locators.tasks:TaskRunsPageLocators
+    url: /tasks/ns/{ns}/task-runs
+    ready: list
+    samples:
+      TASKRUN_ROW_BY_NAME: {taskrun_name: probe-task-run}
+
+  - key: task.details
+    locators: framework.locators.tasks:TaskDetailsPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~Task/probe-task
+    ready: detail
+
+  - key: task.yaml
+    locators: framework.locators.tasks:TaskYamlPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~Task/probe-task/yaml
+    ready: yaml
+
+  - key: taskrun.details
+    locators: framework.locators.tasks:TaskRunDetailsPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~TaskRun/probe-task-run
+    ready: detail
+
+  - key: taskrun.yaml
+    locators: framework.locators.tasks:TaskRunYamlPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~TaskRun/probe-task-run/yaml
+    ready: yaml
+    # A completed TaskRun is immutable, so the console renders no Save button.
+    conditional: [SAVE_BUTTON]
+
+  - key: task.create
+    locators: framework.locators.tasks:CreateTaskPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~Task/~new
+    ready: form
+
+  - key: taskrun.create
+    locators: framework.locators.tasks:CreateTaskRunPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~TaskRun/~new
+    ready: form
+
+  # ---------- Pipelines ----------
+  - key: pipelines.list.base
+    locators: framework.locators.pipelines:PipelinesBasePageLocators
+    url: /pipelines/ns/{ns}
+    ready: list
+    many: [KEBAB_MENU_BUTTON]
+    # NO_DATA_MESSAGE is the empty-state body - mutually exclusive with seeded rows.
+    skip: [NO_DATA_MESSAGE]
+
+  - key: pipelines.list
+    locators: framework.locators.pipelines:PipelinesPageLocators
+    url: /pipelines/ns/{ns}
+    ready: list
+    samples:
+      PIPELINE_ROW_BY_NAME: {pipeline_name: probe-pipeline}
+
+  - key: pipelineruns.list
+    locators: framework.locators.pipelines:PipelineRunsPageLocators
+    url: /pipelines/ns/{ns}/pipeline-runs
+    ready: list
+    samples:
+      PIPELINERUN_ROW_BY_NAME: {pipelinerun_name: probe-pipeline-run}
+      PIPELINERUN_STATUS_CELL: {pipelinerun_name: probe-pipeline-run}
+
+  - key: repositories.list
+    locators: framework.locators.pipelines:RepositoriesPageLocators
+    url: /pipelines/ns/{ns}/repositories
+    ready: empty_list
+    # No Repository CRs on this cluster, so the table and its headers never render.
+    conditional: [NAME_COLUMN_HEADER, ACTIONS_COLUMN_HEADER]
+
+  - key: pipeline.details
+    locators: framework.locators.pipelines:PipelineDetailsPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~Pipeline/probe-pipeline
+    ready: detail
+
+  - key: pipeline.yaml
+    locators: framework.locators.pipelines:PipelineYamlPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~Pipeline/probe-pipeline/yaml
+    ready: yaml
+
+  - key: pipeline.parameters
+    locators: framework.locators.pipelines:PipelineParametersPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~Pipeline/probe-pipeline/parameters
+    ready: form
+
+  - key: pipeline.runs_tab
+    locators: framework.locators.pipelines:PipelinePipelineRunsTabPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~Pipeline/probe-pipeline/Runs
+    ready: list
+    # Callers index this with ">> nth=", so one per row is correct.
+    many: [KEBAB_MENU_BUTTON]
+
+  - key: pipeline.builder
+    locators: framework.locators.pipelines:PipelineBuilderPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~Pipeline/~new/builder
+    ready: form
+
+  - key: pipeline.builder.view
+    locators: framework.locators.pipelines:BuilderViewLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~Pipeline/~new/builder
+    ready: form
+    skip:
+      - TASK_NODE_TEMPLATE
+      - TASK_PARAM_TEMPLATE
+      - TASK_WORKSPACE_TEMPLATE
+      - PIPELINE_PARAM_NAME_TEMPLATE
+      - PIPELINE_PARAM_DESC_TEMPLATE
+      - PIPELINE_PARAM_DEFAULT_TEMPLATE
+      - PIPELINE_WORKSPACE_NAME_TEMPLATE
+      - ADD_TASK_FROM_SEARCH_BUTTON
+      # Both appear only after opening quick search / selecting a task node.
+      - QUICK_SEARCH_INPUT
+      - TASK_NAME_INPUT
+
+  - key: pipelines.overview
+    locators: framework.locators.pipelines:PipelinesOverViewPageLocators
+    url: /pipelines-overview/ns/{ns}
+    ready: overview
+
+  # ---------- PipelineRuns ----------
+  - key: pipelinerun.base
+    locators: framework.locators.pipelineruns:PipelineRunBasePageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~PipelineRun/probe-pipeline-run
+    ready: detail
+
+  - key: pipelinerun.details
+    locators: framework.locators.pipelineruns:PipelineRunDetailsPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~PipelineRun/probe-pipeline-run
+    ready: detail
+
+  - key: pipelinerun.yaml
+    locators: framework.locators.pipelineruns:PipelineRunYamlPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~PipelineRun/probe-pipeline-run/yaml
+    ready: yaml
+
+  - key: pipelinerun.parameters
+    locators: framework.locators.pipelineruns:PipelineRunParametersPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~PipelineRun/probe-pipeline-run/parameters
+    ready: form
+
+  - key: pipelinerun.logs
+    locators: framework.locators.pipelineruns:PipelineRunLogsPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~PipelineRun/probe-pipeline-run/logs
+    ready: logs
+    # get_task_status scopes icons inside a task nav item, so matching the nav icon
+    # and the page-header status icon both is expected.
+    many: [TASK_SUCCESS_ICON]
+    # Status icons and empty/loading states depend on the seeded run's outcome.
+    conditional:
+      [RUNNING_STATUS, FAILED_STATUS, NO_LOGS_MESSAGE, NO_TASKS_MESSAGE,
+       LOADING_INDICATOR, SKELETON_LOADER,
+       TASK_RUNNING_ICON, TASK_PENDING_ICON, TASK_FAILURE_ICON,
+       DOWNLOAD_ALL_BUTTON]
+
+  - key: pipelinerun.taskruns_tab
+    locators: framework.locators.pipelineruns:PipelineRunTaskRunsPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~PipelineRun/probe-pipeline-run/task-runs
+    ready: list
+    # Callers index this with ">> nth=", so one per row is correct.
+    many: [KEBAB_MENU_BUTTON]
+
+  - key: pipelinerun.create
+    locators: framework.locators.pipelineruns:CreatePipelineRunPageLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~PipelineRun/~new
+    ready: form
+
+  # ---------- Triggers ----------
+  - key: triggers.list
+    locators: framework.locators.triggers:TriggersPageLocators
+    url: /triggers/ns/{ns}
+    ready: list
+    many: [KEBAB_MENU_BUTTON]
+    # The empty-state check cannot render on a list that has rows.
+    conditional: [TRIGGERS_NO_DATA_LOAD_CHECK]
+
+  - key: eventlistener.details
+    locators: framework.locators.triggers:EventListenerDetailsPageLocators
+    url: /k8s/ns/{ns}/triggers.tekton.dev~v1beta1~EventListener/probe-event-listener
+    ready: detail
+
+  - key: eventlistener.yaml
+    locators: framework.locators.triggers:EventListenerYamlPageLocators
+    url: /k8s/ns/{ns}/triggers.tekton.dev~v1beta1~EventListener/probe-event-listener/yaml
+    ready: yaml
+
+  - key: triggertemplate.details
+    locators: framework.locators.triggers:TriggerTemplateDetailsPageLocators
+    url: /k8s/ns/{ns}/triggers.tekton.dev~v1beta1~TriggerTemplate/probe-trigger-template
+    ready: detail
+
+  - key: triggertemplate.yaml
+    locators: framework.locators.triggers:TriggerTemplateYamlPageLocators
+    url: /k8s/ns/{ns}/triggers.tekton.dev~v1beta1~TriggerTemplate/probe-trigger-template/yaml
+    ready: yaml
+
+  - key: triggerbinding.details
+    locators: framework.locators.triggers:TriggerBindingDetailsPageLocators
+    url: /k8s/ns/{ns}/triggers.tekton.dev~v1beta1~TriggerBinding/probe-trigger-binding
+    ready: detail
+
+  - key: triggerbinding.yaml
+    locators: framework.locators.triggers:TriggerBindingYamlPageLocators
+    url: /k8s/ns/{ns}/triggers.tekton.dev~v1beta1~TriggerBinding/probe-trigger-binding/yaml
+    ready: yaml
+
+  - key: triggerbinding.create
+    locators: framework.locators.triggers:CreateTriggerBindingPageLocators
+    url: /k8s/ns/{ns}/triggers.tekton.dev~v1beta1~TriggerBinding/~new
+    ready: yaml
+
+  - key: triggertemplate.create
+    locators: framework.locators.triggers:CreateTriggerTemplatePageLocators
+    url: /k8s/ns/{ns}/triggers.tekton.dev~v1beta1~TriggerTemplate/~new
+    ready: yaml
+
+  - key: eventlistener.create
+    locators: framework.locators.triggers:CreateEventListenerPageLocators
+    url: /k8s/ns/{ns}/triggers.tekton.dev~v1beta1~EventListener/~new
+    ready: yaml
+
+  - key: clustertriggerbinding.create
+    locators: framework.locators.triggers:CreateClusterTriggerBindingPageLocators
+    url: /k8s/cluster/triggers.tekton.dev~v1beta1~ClusterTriggerBinding/~new
+    ready: yaml
+
+  # ---------- Overview / shared chrome ----------
+  - key: overview
+    # OverViewPage.verify_on_page() waits for a URL ending in "dashboards": this class
+    # describes the console home page, NOT /pipelines-overview. Mapping it there once
+    # caused a correct locator to be "fixed" into a broken one.
+    locators: framework.locators.overview:OverViewPageLocators
+    url: /dashboards
+    ready: overview
+    # The guided tour only appears for a user who has not dismissed it.
+    conditional: [SKIP_TOUR_BUTTON]
+
+  - key: nav.left
+    locators: framework.locators.commons:LeftNavigationBarLocators
+    url: /pipelines/ns/{ns}
+    ready: list
+
+  - key: nav.project_selector
+    locators: framework.locators.commons:ProjectSelectorLocators
+    url: /pipelines/ns/{ns}
+    ready: list
+
+  - key: nav.favorites
+    locators: framework.locators.commons:FavoritesLocators
+    url: /pipelines/ns/{ns}
+    ready: list
+
+  - key: actions_menu
+    locators: framework.locators.commons:ActionsMenuLocators
+    url: /k8s/ns/{ns}/tekton.dev~v1~Pipeline/probe-pipeline
+    ready: detail
+
+  # ---------- Operator install (Software Catalog) ----------
+  - key: software_catalog
+    locators: framework.locators.operators:SoftwareCatalogLocators
+    # OperatorHub was replaced by the Software Catalog in 4.22; /operatorhub now
+    # redirects here. The old route 404s, which is how the UI install silently broke.
+    url: /catalog/all-namespaces?catalogType=operator
+    ready: catalog
+    many: [CATALOG_TILE]
+
+  - key: installed_operators
+    locators: framework.locators.operators:InstalledOperatorsLocators
+    url: /k8s/all-namespaces/operators.coreos.com~v1alpha1~ClusterServiceVersion
+    ready: list
+    # Only present once OpenShift Pipelines is actually installed.
+    conditional: [OSP_ROW, OSP_LINK, STATUS_SUCCEEDED]
+    # One Succeeded cell per installed operator, so repetition is expected.
+    many: [STATUS_SUCCEEDED]
+
+# Not swept, and why:
+#   LoginPageLocators           - only exists before the sweep authenticates
+#   ConfirmationModalLocators   - only exists after a destructive action is triggered
+#   YamlViewLocators            - lives behind the builder's YAML/form view toggle
+#   SoftwareCatalogNavLocators  - Ecosystem's children are hidden until it is expanded
+#   OperatorDetailPanelLocators - the panel opens only after clicking a catalog card
+#   InstallOperatorLocators     - the subscribe form is two clicks past the catalog
+#   InstallResultLocators       - exists only on the page shown after an install

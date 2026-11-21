@@ -2,7 +2,7 @@ repos:
   # Ruff - Fast Python linter and formatter
 -   repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version - update to latest stable
-    rev: v0.16.8
+    rev: v0.17.6
     hooks:
       # Run the linter
     -   id: ruff
@@ -51,7 +51,7 @@ repos:
 
   # Optional: Pre-commit update checker
 -   repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
-    rev: v0.9.0
+    rev: v0.10.0
     hooks:
     -   id: pre-commit-update
         args: [--no-all-versions, -v]

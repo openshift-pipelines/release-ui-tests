@@ -4,7 +4,14 @@ metadata:
   name: simple-task
   labels:
     version: v1
+    app: tekton-test
+  annotations:
+    description: A simple task for testing
+    owner: test-user
 spec:
+  description: |
+    This is a simple task that runs a basic echo command.
+    Used for testing task creation and validation.
   steps:
     - name: echo
       image: registry.redhat.io/ubi9/ubi-minimal

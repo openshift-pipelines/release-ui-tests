@@ -1,0 +1,173 @@
+Sweeping 43 pages against ocp4.22.16-osp1.24.0 ...
+
+  OK   tasks.list.base                    9/9  hidden=1
+  OK   tasks.list                         5/5
+  OK   taskruns.list                      8/8
+  DRIFT task.details                       6/9  missing=3
+  OK   task.yaml                          14/14
+  OK   taskrun.details                    8/8
+  OK   taskrun.yaml                       14/14
+  OK   task.create                        13/13
+  OK   taskrun.create                     13/13
+  OK   pipelines.list.base                11/11  hidden=1
+  DRIFT pipelines.list                     7/8  missing=1
+  DRIFT pipelineruns.list                  9/10  missing=1
+  OK   repositories.list                  2/2
+  DRIFT pipeline.details                   14/21  missing=7
+  OK   pipeline.yaml                      17/17
+  DRIFT pipeline.parameters                10/14  missing=4
+  DRIFT pipeline.runs_tab                  19/20  missing=1  hidden=1
+  OK   pipeline.builder                   6/6
+  OK   pipeline.builder.view              4/4
+  OK   pipelines.overview                 1/1
+  DRIFT pipelinerun.base                   9/10  missing=1
+  DRIFT pipelinerun.details                8/16  missing=8
+  OK   pipelinerun.yaml                   9/9
+  DRIFT pipelinerun.parameters             1/4  missing=3
+  DRIFT pipelinerun.logs                   19/23  missing=3  ambiguous=1
+  OK   pipelinerun.taskruns_tab           13/13  hidden=1
+  DRIFT pipelinerun.create                 12/13  missing=1
+  OK   triggers.list                      7/7
+  DRIFT eventlistener.details              9/11  missing=2
+  DRIFT eventlistener.yaml                 13/14  missing=1
+  DRIFT triggertemplate.details            8/9  missing=1
+  DRIFT triggertemplate.yaml               13/14  missing=1
+  DRIFT triggerbinding.details             8/9  missing=1
+  DRIFT triggerbinding.yaml                13/14  missing=1
+  OK   triggerbinding.create              9/9
+  OK   triggertemplate.create             9/9
+  OK   eventlistener.create               9/9
+  OK   clustertriggerbinding.create       9/9
+  OK   overview                           2/2
+  OK   nav.left                           6/6  hidden=4
+  OK   nav.project_selector               1/1
+  OK   nav.favorites                      1/1
+  OK   actions_menu                       1/1
+
+==============================================================================
+SWEEP SUMMARY   version=ocp4.22.16-osp1.24.0
+==============================================================================
+  pages swept     43/43
+  locators probed 420
+  drifted         41
+  skipped         33 (need an interaction first)
+
+DRIFTED LOCATORS (41):
+
+  TaskDetailsPageLocators
+    ANNOTATIONS_BUTTON                   matches nothing
+      button:has-text("annotations")
+    BREADCRUMB_TASK_DETAILS_LINK         matches nothing
+      nav[aria-label="Breadcrumb"] a:has-text("Task details")
+    EDIT_LABELS_BUTTON                   matches nothing
+      dt:has(button:has-text("Labels")) button:has-text("Edit")
+
+  PipelinesPageLocators
+    VIEW_LOGS_BUTTON                     matches nothing
+      button:has-text("View logs")
+
+  PipelineRunsPageLocators
+    VIEW_LOGS_BUTTON                     matches nothing
+      button:has-text("View logs")
+
+  PipelineDetailsPageLocators
+    ANNOTATIONS_BUTTON                   matches nothing
+      button:has-text("Annotations")
+    CREATED_AT_BUTTON                    matches nothing
+      button:has-text("Created at")
+    EDIT_LABELS_BUTTON                   matches nothing
+      dt:has(button:has-text("Labels")) button:has-text("Edit")
+    LABELS_BUTTON                        matches nothing
+      button:has-text("Labels")
+    NAMESPACE_BUTTON                     matches nothing
+      button:has-text("Namespace")
+    NAME_BUTTON                          matches nothing
+      button:has-text("Name")
+    OWNER_BUTTON                         matches nothing
+      button:has-text("Owner")
+
+  PipelineParametersPageLocators
+    PARAMETER_DEFAULT_VALUE_INPUT        matches nothing
+      textbox[placeholder="Default value"]
+    PARAMETER_DESCRIPTION_INPUT          matches nothing
+      textbox[placeholder="Description"]
+    PARAMETER_NAME_INPUT                 matches nothing
+      textbox[placeholder="Name"]
+    REMOVE_PARAMETER_BUTTON              matches nothing
+      button:has-text("Remove")
+
+  PipelinePipelineRunsTabPageLocators
+    VIEW_LOGS_BUTTON                     matches nothing
+      button:has-text("View logs")
+
+  PipelineRunBasePageLocators
+    APPROVAL_TASKS_TAB                   matches nothing
+      role=tab[name="ApprovalTasks"]
+
+  PipelineRunDetailsPageLocators
+    CONDITIONS_HEADING                   matches nothing
+      h2:has-text("Conditions")
+    CONDITIONS_TABLE                     matches nothing
+      div:has(h2:has-text("Conditions")) div[role="grid"]
+    CREATED_AT_BUTTON                    matches nothing
+      button:has-text("Created at")
+    EDIT_LABELS_BUTTON                   matches nothing
+      dt:has(button:has-text("Labels")) button:has-text("Edit")
+    LABELS_BUTTON                        matches nothing
+      button:has-text("Labels")
+    NAMESPACE_BUTTON                     matches nothing
+      button:has-text("Namespace")
+    NAME_BUTTON                          matches nothing
+      button:has-text("Name")
+    OWNER_BUTTON                         matches nothing
+      button:has-text("Owner")
+
+  PipelineRunParametersPageLocators
+    NAME_HEADER                          matches nothing
+      text="Name*"
+    PARAMETER_NAME_TEXTBOX               matches nothing
+      textbox[disabled]
+    PARAMETER_VALUE_TEXTBOX              matches nothing
+      textbox[disabled]
+
+  PipelineRunLogsPageLocators
+    LOGS_TEXT_CONTENT                    matches nothing
+      div.odc-multi-stream-logs__logviewer, div.odc-multi-stream-logs, div.odc-pipeline-run-logs__container
+    LOG_WINDOW                           matches nothing
+      div.log-window
+    STEP_CONTAINER                       matches nothing
+      div[class*="step"]
+    STEP_HEADER                          26 matches
+      div:has-text("STEP-")
+
+  CreatePipelineRunPageLocators
+    CLOSE_SIDEBAR_BUTTON                 matches nothing
+      button:has-text("Close")
+
+  EventListenerDetailsPageLocators
+    CONDITIONS_TABLE                     matches nothing
+      h2:has-text("Conditions") + * role=grid
+    EDIT_LABELS_BUTTON                   matches nothing
+      dt:has(button:has-text("Labels")) button:has-text("Edit")
+
+  EventListenerYamlPageLocators
+    TOGGLE_SIDEBAR_BUTTON                matches nothing
+      button[aria-label="Show sidebar"], button[aria-label="Hide sidebar"]
+
+  TriggerTemplateDetailsPageLocators
+    EDIT_LABELS_BUTTON                   matches nothing
+      dt:has(button:has-text("Labels")) button:has-text("Edit")
+
+  TriggerTemplateYamlPageLocators
+    TOGGLE_SIDEBAR_BUTTON                matches nothing
+      button[aria-label="Show sidebar"], button[aria-label="Hide sidebar"]
+
+  TriggerBindingDetailsPageLocators
+    EDIT_LABELS_BUTTON                   matches nothing
+      dt:has(button:has-text("Labels")) button:has-text("Edit")
+
+  TriggerBindingYamlPageLocators
+    TOGGLE_SIDEBAR_BUTTON                matches nothing
+      button[aria-label="Show sidebar"], button[aria-label="Hide sidebar"]
+
+Full results written to .agent/sweep/last_run.json

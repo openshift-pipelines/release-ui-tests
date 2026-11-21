@@ -6,7 +6,6 @@ Feature: Pipeline Builder Sanity Tests
     And the user navigates to the Pipelines page
     And user switches to current project
 
-  @smoke
   Scenario: Create pipeline using Pipeline Builder
     When the user clicks Create button on Pipelines page
     And the user clicks Pipeline menu item

@@ -1,0 +1,17 @@
+{
+  "page_key": "pipelines.list",
+  "url": "/pipelines/ns/openshift",
+  "ready": "table[data-ouia-component-type=\"PF6/Table\"]",
+  "candidates": {
+    "PIPELINES_HEADER": "h1:has-text(\"Pipelines\")",
+    "CREATE_BUTTON": "[data-test=\"item-create\"]",
+    "PIPELINES_TAB": "a[role=\"tab\"]:has-text(\"Pipelines\")",
+    "PIPELINE_RUNS_TAB": "a[href^=\"/pipelines/ns/\"][href$=\"/pipeline-runs\"]",
+    "REPOSITORIES_TAB": "a[href^=\"/pipelines/ns/\"][href$=\"/repositories\"]",
+    "SEARCH_INPUT": "input[aria-label=\"Search input\"]",
+    "FILTER_BUTTON": "button[aria-label=\"Show Filters\"]",
+    "CLEAR_ALL_FILTERS_BUTTON": "[data-ouia-component-id=\"DataViewToolbar-clear-all-filters\"]",
+    "KEBAB_MENU_BUTTON": {"selector": "button[aria-label=\"Actions\"]", "expect": "many"},
+    "DATA_GRID": "table[data-ouia-component-type=\"PF6/Table\"]"
+  }
+}

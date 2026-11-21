@@ -6,55 +6,22 @@ Follows SOLID principles with helper functions and reusable components.
 """
 
 import asyncio
+import json
+import re
 from pathlib import Path
 from typing import Any, Dict
 
 from pytest_bdd import parsers, scenarios, then, when
 
-from framework.cli.openshift_cli import OpenShiftCLI
 from framework.fixtures.async_bridge import run_async
 from framework.helpers.yaml_loader import YamlLoader
+from framework.utils.retry import retry_on_exception
 
 # Register all scenarios from the taskrun_crud_operations feature file
 FEATURE_FILE = Path(__file__).parent.parent / "features" / "taskrun_crud_operations.feature"
 scenarios(FEATURE_FILE)
 
-
-@when(parsers.parse('the user creates a task via cli from YAML file "{task_yaml_file}"'))
-def create_task_via_cli(
-    task_yaml_file: str, openshift_cli: OpenShiftCLI, playwright_event_loop: asyncio.AbstractEventLoop
-) -> None:
-    """
-    Create a Tekton Task via OpenShift CLI by loading YAML from test data.
-
-    This step creates the prerequisite Task resource that a TaskRun will reference.
-    The Task is applied to the current project/namespace using oc apply.
-
-    :param str task_yaml_file: Name of task YAML file in test_data/tasks/
-    :param OpenShiftCLI openshift_cli: CLI wrapper instance
-    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
-    :return: None: Raises AssertionError if task creation fails
-    """
-
-    async def _step() -> None:
-        # Load task YAML content using helper
-        yaml_content = YamlLoader.load_task_yaml(task_yaml_file)
-
-        # Apply the task YAML via CLI
-        success = await openshift_cli.apply_yaml(yaml_content)
-        assert success, f"Failed to create task from YAML file '{task_yaml_file}' via CLI"
-
-        # Extract task name from YAML for logging
-        metadata = YamlLoader.get_task_metadata(yaml_content)
-        task_name = metadata.get("name", "unknown")
-
-        # Log successful creation
-        import logging
-
-        logger = logging.getLogger(__name__)
-        logger.info(f"Successfully created task '{task_name}' via CLI")
-
-    run_async(playwright_event_loop, _step())
+# Shared steps (create task via CLI, TaskRun list presence) live in test_shared_steps.py
 
 
 @when(parsers.parse('the user creates a taskrun from YAML file "{yaml_file}"'))
@@ -156,6 +123,58 @@ def validate_taskrun_details(
     run_async(playwright_event_loop, _step())
 
 
+@when(parsers.parse('the user navigates to taskrun details page for taskrun "{taskrun_name}"'))
+def navigate_to_task_details_page_for_given_task(
+    page: Dict[str, Any], taskrun_name: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """
+    Verify that a task with the given name appears in the tasks list.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param str taskrun_name: Name of the task to verify
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if task is not visible in list
+    """
+
+    async def _step() -> None:
+        await page["tasks"].taskrun.list.click_on_given_taskrun_in_list(taskrun_name=taskrun_name)
+
+        # Wait for task details page to load
+        await page["raw_page"].wait_for_load_state("networkidle")
+
+        # Verify we're on the task details page
+        on_page = await page["tasks"].taskrun.details.verify_on_page()
+        assert on_page, f"Failed to navigate to taskrun details page for '{taskrun_name}'"
+
+    run_async(playwright_event_loop, _step())
+
+
+@when(parsers.parse('the taskrun details page should display heading with taskrun name as "{taskrun_name}"'))
+@then(parsers.parse('the taskrun details page should display heading with taskrun name as "{taskrun_name}"'))
+def verify_task_run_details_heading_name(
+    page: Dict[str, Any], taskrun_name: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """
+    Verify that the task run details page displays the correct task name.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param str taskrun_name: Expected task run name to verify
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if name does not match
+    """
+
+    async def _step() -> None:
+        # Get displayed task name
+        displayed_name = await page["tasks"].taskrun.details.get_taskrun_heading_name()
+
+        # Verify it starts with the expected prefix (for generateName resources)
+        assert displayed_name.startswith(taskrun_name.rstrip("-")), (
+            f"TaskRun details page displays name '{displayed_name}' but expected name starting with '{taskrun_name}'"
+        )
+
+    run_async(playwright_event_loop, _step())
+
+
 @when(parsers.parse('the taskrun details page should display the taskrun name as "{taskrun_name}"'))
 @then(parsers.parse('the taskrun details page should display the taskrun name as "{taskrun_name}"'))
 def verify_task_run_details_name(
@@ -177,6 +196,101 @@ def verify_task_run_details_name(
         # Verify it starts with the expected prefix (for generateName resources)
         assert displayed_name.startswith(taskrun_name.rstrip("-")), (
             f"TaskRun details page displays name '{displayed_name}' but expected name starting with '{taskrun_name}'"
+        )
+
+    run_async(playwright_event_loop, _step())
+
+
+@then(parsers.parse("the taskrun details page should display namespace"))
+def verify_task_namespace(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
+    """
+    Verify that the task details page displays the correct namespace.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if namespace does not match
+    """
+
+    async def _step() -> None:
+        # Get displayed task name
+        displayed_name = await page["tasks"].taskrun.details.get_namespace()
+
+        # Verify it matches expected name
+        assert "release-ui-test" in displayed_name, (
+            f"TaskRun details page namespace value should contain release-ui-test but found '{displayed_name}'"
+        )
+
+    run_async(playwright_event_loop, _step())
+
+
+@then(parsers.parse('the taskrun details page should contain labels with value "{labels}"'))
+@retry_on_exception(retries=3, delay_seconds=2.0)
+def verify_taskrun_labels(page: Dict[str, Any], labels: str, playwright_event_loop: asyncio.AbstractEventLoop) -> None:
+    """
+    Verify that the task details page displays the specified label.
+
+    Retries briefly so the details pane can catch up after a labels save.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param str labels: JSON object containing the labels to verify
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if label is not found
+    """
+
+    async def _step() -> None:
+        try:
+            expected_labels = json.loads(labels)
+        except json.JSONDecodeError as error:
+            raise AssertionError(f"Invalid expected labels JSON '{labels}': {error.msg}") from error
+
+        assert isinstance(expected_labels, dict), f"Expected labels must be a JSON object, but received '{labels}'"
+
+        # inner_text() can contain newlines or spaces around the equals sign.
+        displayed_labels_value = await page["tasks"].taskrun.details.get_labels_value()
+        normalized_labels_value = re.sub(r"\s*=\s*", "=", displayed_labels_value)
+        missing_labels = [
+            f"{key}={value}"
+            for key, value in expected_labels.items()
+            if f"{key}={value}" not in normalized_labels_value
+        ]
+        assert not missing_labels, (
+            f"TaskRun details page labels missing {missing_labels}; displayed labels were '{displayed_labels_value}'"
+        )
+
+    run_async(playwright_event_loop, _step())
+
+
+@then(
+    parsers.parse(
+        'the taskrun details page should contain appropriate count of annotations value as "{annotations_count}"'
+    )
+)
+@retry_on_exception(retries=3, delay_seconds=2.0)
+def verify_taskrun_annotations_count(
+    page: Dict[str, Any], annotations_count: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """
+    Verify that the task details page displays the expected annotation count.
+
+    Retries briefly so the details pane can catch up after an annotations save.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param str annotations_count: count of the expected annotations
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if the annotation count does not match
+    """
+
+    async def _step() -> None:
+
+        annotations_count_value = await page["tasks"].taskrun.details.get_annotations_count_value()
+        count_match = re.search(r"\d+", annotations_count_value)
+        assert count_match, f"Could not extract an annotation count from '{annotations_count_value}'"
+
+        displayed_count = int(count_match.group())
+        expected_count = int(annotations_count)
+        assert displayed_count >= expected_count, (
+            f"TaskRun details page displays {displayed_count} annotations, "
+            f"but expected to be greater then {expected_count}"
         )
 
     run_async(playwright_event_loop, _step())
@@ -244,24 +358,76 @@ def verify_taskrun_status_of_given_task_name(
     run_async(playwright_event_loop, _step())
 
 
-@when(parsers.parse('the taskrun "{taskrun_name}" should appear in the taskruns list'))
-@then(parsers.parse('the taskrun "{taskrun_name}" should appear in the taskruns list'))
-def verify_taskrun_in_list(
-    page: Dict[str, Any], taskrun_name: str, playwright_event_loop: asyncio.AbstractEventLoop
-) -> None:
+@when(parsers.parse("the user opens edits labels popup of taskrun from taskrun details page"))
+def open_taskrun_edit_labels_popup(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
     """
-    Verify that a TaskRun with the given name appears in the TaskRuns list.
+    Open the edit labels dialog on the already opened TaskRun details page.
 
     :param Dict[str, Any] page: Page object dictionary
-    :param str taskrun_name: Name prefix of the TaskRun to verify
     :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
-    :return: None: Raises AssertionError if TaskRun is not visible in list
+    :return: None: Raises AssertionError if the labels popup cannot be opened
     """
 
     async def _step() -> None:
-        # Verify TaskRun appears in list
-        taskrun_visible = await page["tasks"].runs.verify_taskrun_in_list(taskrun_name)
-        assert taskrun_visible, f"TaskRun '{taskrun_name}' does not appear in TaskRuns list"
+        taskrun_visible = await page["tasks"].taskrun.details.click_edit_labels()
+        assert taskrun_visible, "Unable to open edit labels popup from TaskRun details page"
+
+    run_async(playwright_event_loop, _step())
+
+
+@when(parsers.parse('the user adds labels to taskrun "{taskrun_name}" with labels "{labels}"'))
+def add_task_labels(
+    page: Dict[str, Any], taskrun_name: str, labels: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """Append JSON label pairs to the open Edit labels dialog."""
+
+    async def _step() -> None:
+        try:
+            new_labels = json.loads(labels)
+        except json.JSONDecodeError as error:
+            raise AssertionError(f"Invalid labels JSON '{labels}': {error.msg}") from error
+
+        assert isinstance(new_labels, dict), f"Expected labels must be a JSON object, but received '{labels}'"
+        labels_saved = await page["tasks"].taskrun.details.labels_modal.add_labels(new_labels)
+        assert labels_saved, f"Failed to add labels to taskrun '{taskrun_name}'"
+
+    run_async(playwright_event_loop, _step())
+
+
+@when(parsers.parse("the user opens edits annotations popup of taskrun from taskrun details page"))
+def open_taskrun_edit_annotations_popup(page: Dict[str, Any], playwright_event_loop: asyncio.AbstractEventLoop) -> None:
+    """
+    Open the edit annotations dialog on the already opened TaskRun details page.
+
+    :param Dict[str, Any] page: Page object dictionary
+    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
+    :return: None: Raises AssertionError if the annotations popup cannot be opened
+    """
+
+    async def _step() -> None:
+        taskrun_visible = await page["tasks"].taskrun.details.click_edit_annotations()
+        assert taskrun_visible, "Unable to open annotations popup from TaskRun details page"
+
+    run_async(playwright_event_loop, _step())
+
+
+@when(parsers.parse('the user adds new annotations to taskrun "{taskrun_name}" with annotations "{annotations}"'))
+def add_task_annotations(
+    page: Dict[str, Any], taskrun_name: str, annotations: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """Append JSON annotation pairs to the open Edit annotations dialog."""
+
+    async def _step() -> None:
+        try:
+            new_annotations = json.loads(annotations)
+        except json.JSONDecodeError as error:
+            raise AssertionError(f"Invalid annotations JSON '{annotations}': {error.msg}") from error
+
+        assert isinstance(new_annotations, dict), (
+            f"Expected annotations must be a JSON object, but received '{annotations}'"
+        )
+        annotations_saved = await page["tasks"].taskrun.details.annotations_modal.add_annotations(new_annotations)
+        assert annotations_saved, f"Failed to add annotations to taskrun '{taskrun_name}'"
 
     run_async(playwright_event_loop, _step())
 
@@ -315,30 +481,5 @@ def delete_taskrun(page: Dict[str, Any], taskrun_name: str, playwright_event_loo
 
         # Wait for deletion to complete
         await page["raw_page"].wait_for_timeout(2000)
-
-    run_async(playwright_event_loop, _step())
-
-
-@then(parsers.parse('the taskrun "{taskrun_name}" should not appear in the taskruns list'))
-def verify_taskrun_not_in_list(
-    page: Dict[str, Any], taskrun_name: str, playwright_event_loop: asyncio.AbstractEventLoop
-) -> None:
-    """
-    Verify that a TaskRun with the given name does NOT appear in the TaskRuns list.
-
-    :param Dict[str, Any] page: Page object dictionary
-    :param str taskrun_name: Name prefix of the TaskRun to verify absence
-    :param asyncio.AbstractEventLoop playwright_event_loop: Event loop for async execution
-    :return: None: Raises AssertionError if TaskRun is still visible in list
-    """
-
-    async def _step() -> None:
-        # Wait for TaskRuns list to reload after deletion
-        data_loaded = await page["tasks"].runs.verify_task_runs_tab_data_load()
-        assert data_loaded, "TaskRuns list failed to reload after deletion"
-
-        # Verify TaskRun does NOT appear in list
-        taskrun_not_visible = await page["tasks"].runs.verify_taskrun_not_in_list(taskrun_name)
-        assert taskrun_not_visible, f"TaskRun '{taskrun_name}' still appears in TaskRuns list after deletion"
 
     run_async(playwright_event_loop, _step())

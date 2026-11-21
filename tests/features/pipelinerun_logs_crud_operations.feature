@@ -6,13 +6,11 @@ Feature: PipelineRun Logs CRUD Operations
     And the user navigates to the Pipelines page
     And user switches to current project
 
-  @smoke
   Scenario: Create PipelineRun and verify logs display expected content
     When the user creates a pipelinerun from YAML file "simple_pipelinerun_inline.yaml"
     And the user navigates to Logs tab
     And the user waits for logs to fully load
     Then the logs for task "greet" should contain "Hello from pipeline!"
-
 
   Scenario: Update PipelineRun and verify log output changes
     Given the user creates a pipelinerun from YAML file "simple_pipelinerun_inline.yaml"

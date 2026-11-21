@@ -138,10 +138,15 @@ class PipelineRunLogsPageLocators:
     # SVG paths are more reliable than RGB colors which vary by theme/PatternFly version
     # These paths correspond to PatternFly icons: CheckCircleIcon, ExclamationCircleIcon, etc.
     # If PatternFly updates icon paths, update these selectors accordingly
-    TASK_SUCCESS_ICON = 'svg.pf-v5-svg path[d*="M504 256c0 136.967"]'  # CheckCircleIcon (success)
-    TASK_FAILURE_ICON = 'svg.pf-v5-svg path[d*="M256 8C119.043"]'  # ExclamationCircleIcon (failure)
-    TASK_RUNNING_ICON = 'svg.pf-v5-svg path[d*="M440.935"]'  # SyncAltIcon (running/in-progress)
-    TASK_PENDING_ICON = 'svg.pf-v5-svg path[d*="M256 8C119"]'  # PendingIcon (pending/queued)
+    # Status is conveyed only by the icon's path data; the wrapper svg carries no
+    # distinguishing class. Success and failure differ from the third decimal
+    # (136.967 vs 136.997), so these must anchor with ^= rather than *=.
+    TASK_SUCCESS_ICON = 'svg.pf-v6-svg path[d^="M504 256c0 136.967"]'  # CheckCircleIcon
+    TASK_FAILURE_ICON = 'svg.pf-v6-svg path[d^="M504 256c0 136.997"]'  # ExclamationCircleIcon
+    TASK_RUNNING_ICON = 'svg.pf-v6-svg path[d^="M370.72 133.28"]'  # InProgressIcon
+    # Unverified: queued tasks are not rendered in the logs task nav at all on 4.22,
+    # so this branch of get_task_status is unreachable and could not be confirmed.
+    TASK_PENDING_ICON = 'svg.pf-v6-svg path[d^="M256 8C119"]'  # PendingIcon
 
     # Status badges/labels
     STATUS_LABEL = '[data-test="status-text"]'
@@ -155,7 +160,8 @@ class PipelineRunLogsPageLocators:
 
     # Loading states
     LOADING_INDICATOR = '[data-test="loading-indicator"]'
-    SKELETON_LOADER = ".pf-c-skeleton"
+    # Transient loading state, so not directly verifiable; the prefix was pre-PF6.
+    SKELETON_LOADER = ".pf-v6-c-skeleton"
 
     # Empty/No data states
     NO_LOGS_MESSAGE = 'text="No logs available"'
@@ -166,10 +172,12 @@ class PipelineRunTaskRunsPageLocators:
     """Locators specific to the PipelineRun TaskRuns tab"""
 
     # Search/Filter toolbar
-    SEARCH_INPUT = 'input[placeholder="Search by name..."]'
-    FILTER_BUTTON = 'button:has-text("Filter")'
+    SEARCH_INPUT = 'input[aria-label="Search input"]'
+    # PF6 DataView has no "Filter" button; filtering starts from the attribute dropdown.
+    FILTER_BUTTON = "button.pf-m-full-width.pf-v6-c-menu-toggle"
     COLUMN_MANAGEMENT_BUTTON = 'button[aria-label="Column management"]'
-    CLEAR_ALL_FILTERS_BUTTON = 'button:has-text("Clear all filters")'
+    # Rendered but hidden until at least one filter is applied.
+    CLEAR_ALL_FILTERS_BUTTON = '[data-ouia-component-id="DataViewToolbar-clear-all-filters"]'
 
     # TaskRuns table columns
     NAME_COLUMN_HEADER = 'role=columnheader[name="Name"]'
@@ -181,7 +189,7 @@ class PipelineRunTaskRunsPageLocators:
     ACTIONS_COLUMN_HEADER = 'role=columnheader[name="Actions"]'
 
     # Row actions
-    KEBAB_MENU_BUTTON = 'button[aria-label="kebab menu"]'
+    KEBAB_MENU_BUTTON = 'button[aria-label="Actions"]'
 
     # Data load checks
-    DATA_GRID = "table.ReactVirtualized__VirtualGrid"
+    DATA_GRID = 'table[data-ouia-component-type="PF6/Table"]'

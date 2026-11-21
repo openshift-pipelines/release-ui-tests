@@ -108,6 +108,16 @@ class TaskRunYamlPage(BasePage):
         """
         return await self.click_element(self.locators.SAVE_BUTTON)
 
+    async def is_save_button_visible(self, timeout: int = 5000) -> bool:
+        """
+        Whether the Save control is visible on the YAML tab.
+
+        Completed TaskRuns are read-only in the console, so this returns False there.
+        :param int timeout: How long to wait for Save to appear before treating it as absent
+        :return: bool: True if Save is visible within the timeout
+        """
+        return await self.is_visible(self.locators.SAVE_BUTTON, timeout=timeout)
+
     async def click_reload(self) -> bool:
         """
         Clicks the 'Reload' button to reload the YAML from the server.

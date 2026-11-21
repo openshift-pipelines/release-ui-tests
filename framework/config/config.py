@@ -66,8 +66,25 @@ class Config(object, metaclass=Singleton):
         # Authentication type: kube:admin, htpasswd, or direct
         self._auth_type = os.getenv("AUTH_TYPE", "kube:admin").lower()
 
-        # OpenShift Pipelines operator OLM channel
-        self._osp_channel = os.getenv("OSP_CHANNEL", "latest")
+        # OpenShift Pipelines operator configuration
+        self._install_pipelines_operator = os.getenv("INSTALL_PIPELINES_OPERATOR", "true").lower() in (
+            "true",
+            "yes",
+            "1",
+            "on",
+        )
+        self._operator_environment = os.getenv("OPERATOR_ENVIRONMENT", "prod").lower()
+        self._operator_version = os.getenv("OPERATOR_VERSION", "")
+        self._channel = os.getenv("CHANNEL", "latest")
+        self._konflux_index_image = os.getenv("KONFLUX_INDEX_IMAGE", "")
+        self._nightly_override = os.getenv("NIGHTLY", "").strip().lower()
+
+        if self._operator_environment in ("pre-stage", "stage"):
+            self._catalog_source = os.getenv("CATALOG_SOURCE", "custom-operators")
+        else:
+            self._catalog_source = os.getenv("CATALOG_SOURCE", "redhat-operators")
+
+        self._install_method = os.getenv("OSP_INSTALL_METHOD", "cli").lower()
 
         # Artifact capture settings
         self._capture_screenshots = os.getenv("CAPTURE_SCREENSHOTS", "false").lower() == "true"
@@ -151,13 +168,48 @@ class Config(object, metaclass=Singleton):
         return self._artifacts_dir
 
     @property
+    def install_pipelines_operator(self) -> bool:
+        return self._install_pipelines_operator
+
+    @property
+    def operator_environment(self) -> str:
+        return self._operator_environment
+
+    @property
+    def operator_version(self) -> str:
+        return self._operator_version
+
+    @property
+    def channel(self) -> str:
+        return self._channel
+
+    @property
+    def catalog_source(self) -> str:
+        return self._catalog_source
+
+    @property
+    def konflux_index_image(self) -> str:
+        return self._konflux_index_image
+
+    @property
+    def nightly(self) -> bool:
+        """Is this a nightly Konflux build?
+
+        Nightly indexes carry the `:nightly` tag, and NIGHTLY=true forces it for an
+        index that does not. Nightly installs take the channel head: OPERATOR_VERSION
+        is a channel-ish value such as "5.0" there, so it must never be pinned.
+        """
+        if self._nightly_override in ("true", "yes", "1", "on"):
+            return True
+        return self._konflux_index_image.endswith(":nightly")
+
+    @property
+    def install_method(self) -> str:
+        return self._install_method
+
+    @property
     def osp_channel(self) -> str:
-        """
-        Gets the OLM channel for OpenShift Pipelines operator installation.
-        Value is read from OSP_CHANNEL environment variable, defaults to "latest".
-        :return: str: The OLM channel string.
-        """
-        return self._osp_channel
+        return self._channel
 
     @property
     def auth_type(self) -> str:

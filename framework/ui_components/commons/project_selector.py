@@ -67,10 +67,17 @@ class ProjectSelector(BasePage):
                     await self.page.wait_for_timeout(1000 * attempt)
                     continue
 
+                # Filter the list when the console shows a search box (long project lists).
+                try:
+                    await self.page.locator(self.locators.PROJECT_FILTER_INPUT).first.fill(project_name, timeout=2000)
+                    await self.page.wait_for_timeout(500)
+                except Exception:
+                    pass
+
                 # Wait for the specific project menu item to be visible
                 project_locator = self.locators.PROJECT_MENU_ITEM.format(project_name=project_name)
                 try:
-                    await self.page.wait_for_selector(project_locator, state="visible", timeout=5000)
+                    await self.page.wait_for_selector(project_locator, state="visible", timeout=10000)
                     self.logger.info(
                         f"[SELECT PROJECT] Attempt {attempt}: Project menu item '{project_name}' is visible"
                     )

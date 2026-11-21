@@ -1,3 +1,4 @@
+@regression
 Feature: PipelineRun CRUD Operations
 
   Background:
@@ -6,7 +7,7 @@ Feature: PipelineRun CRUD Operations
     And the user navigates to the Pipelines page
     And user switches to current project
 
-  @smoke @sanity
+  @sanity
   Scenario Outline: Create PipelineRun and verify redirect to details page
     When the user creates a pipeline via cli from YAML file "<pipeline_yaml_file>"
     And the user creates a pipelinerun from YAML file "<yaml_file>"
@@ -17,7 +18,7 @@ Feature: PipelineRun CRUD Operations
       | pipeline_yaml_file   | yaml_file                   | pipelinerun_name      |
       | simple_pipeline.yaml | simple_pipelinerun.yaml     | simple-pipelinerun-   |
 
-  @smoke @sanity
+  @sanity
   Scenario Outline: Verify PipelineRun appears in PipelineRuns list
     When the user navigates to PipelineRuns tab
     Then the pipelinerun "<pipelinerun_name>" should appear in the pipelineruns list
@@ -26,7 +27,7 @@ Feature: PipelineRun CRUD Operations
       | pipelinerun_name      |
       | simple-pipelinerun-   |
 
-  @smoke @sanity
+  @sanity
   Scenario Outline: Verify PipelineRun is executed successfully
     When the user navigates to PipelineRuns tab
     Then the pipelinerun "<pipelinerun_name>" is executed with status "<pipelinerun_status>"
@@ -35,7 +36,7 @@ Feature: PipelineRun CRUD Operations
       | pipelinerun_name      | pipelinerun_status |
       | simple-pipelinerun-   | succeeded          |
 
-  @smoke @sanity
+  @sanity
   Scenario Outline: Delete PipelineRun and verify removal
     When the user navigates to PipelineRuns tab
     And the user deletes the pipelinerun "<pipelinerun_name>"

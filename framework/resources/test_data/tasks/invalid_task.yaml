@@ -1,0 +1,8 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: invalid-create-task
+spec:
+  steps:
+    - name: echo
+      image: [invalid]

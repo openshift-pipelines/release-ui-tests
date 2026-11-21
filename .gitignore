@@ -49,6 +49,12 @@ dist/
 # PDF files
 *.pdf
 
+# Agent files
+.*
+
+# docs
+/docs/*
+
 # JetBrains IDE
 .idea/
 

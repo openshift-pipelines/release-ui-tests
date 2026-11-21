@@ -15,14 +15,16 @@ class PipelinesBasePageLocators:
     CREATE_REPOSITORY_MENU_ITEM = 'role=menuitem[name="Repository"]'
 
     # Tab navigation
-    PIPELINES_TAB = 'a[href^="/pipelines/ns/"]'
-    PIPELINE_RUNS_TAB = 'a[href^="/pipelines/ns/"][href$="/pipeline-runs"]'
-    REPOSITORIES_TAB = 'a[href^="/pipelines/ns/"][href$="/repositories"]'
+    PIPELINES_TAB = 'a[role="tab"]:has-text("Pipelines")'
+    PIPELINE_RUNS_TAB = 'a[role="tab"]:has-text("PipelineRuns")'
+    REPOSITORIES_TAB = 'a[role="tab"]:has-text("Repositories")'
 
     # Search/Filter toolbar
-    SEARCH_INPUT = 'input[placeholder="Search by name..."]'
-    FILTER_BUTTON = 'button:has-text("Filter")'
-    CLEAR_ALL_FILTERS_BUTTON = 'button:has-text("Clear all filters")'
+    SEARCH_INPUT = 'input[aria-label="Search input"]'
+    # PF6 DataView has no "Filter" button; filtering starts from the attribute dropdown.
+    FILTER_BUTTON = "button.pf-m-full-width.pf-v6-c-menu-toggle"
+    # Rendered but hidden until at least one filter is applied.
+    CLEAR_ALL_FILTERS_BUTTON = '[data-ouia-component-id="DataViewToolbar-clear-all-filters"]'
 
     # Row actions
     KEBAB_MENU_BUTTON = 'button[aria-label="Actions"]'
@@ -101,7 +103,9 @@ class PipelineBuilderPageLocators:
 
     # Form actions (common to both views)
     CREATE_BUTTON = 'button:has-text("Create")'
-    SAVE_BUTTON = 'button:has-text("Save")'
+    # Reads "Create" for a new pipeline and "Save" when editing, so match the
+    # data-test rather than the label.
+    SAVE_BUTTON = '[data-test="save-changes"]'
     CANCEL_BUTTON = 'button:has-text("Cancel")'
 
 
@@ -278,9 +282,11 @@ class PipelinePipelineRunsTabPageLocators:
     PIPELINERUNS_TAB = 'role=tab[name="PipelineRuns"]'
 
     # Search/Filter toolbar
-    SEARCH_INPUT = 'input[placeholder="Search by name..."]'
-    FILTER_BUTTON = 'button:has-text("Filter")'
-    CLEAR_ALL_FILTERS_BUTTON = 'button:has-text("Clear all filters")'
+    SEARCH_INPUT = 'input[aria-label="Search input"]'
+    # PF6 DataView has no "Filter" button; filtering starts from the attribute dropdown.
+    FILTER_BUTTON = "button.pf-m-full-width.pf-v6-c-menu-toggle"
+    # Rendered but hidden until at least one filter is applied.
+    CLEAR_ALL_FILTERS_BUTTON = '[data-ouia-component-id="DataViewToolbar-clear-all-filters"]'
 
     # PipelineRun-specific table columns
     NAME_COLUMN_HEADER = 'role=columnheader[name="Name"]'
@@ -293,7 +299,7 @@ class PipelinePipelineRunsTabPageLocators:
 
     # PipelineRun-specific actions
     VIEW_LOGS_BUTTON = 'button:has-text("View logs")'
-    KEBAB_MENU_BUTTON = 'button[aria-label="kebab menu"]'
+    KEBAB_MENU_BUTTON = 'button[aria-label="Actions"]'
 
     # Data load checks
-    DATA_GRID = "table.ReactVirtualized__VirtualGrid"
+    DATA_GRID = 'table[data-ouia-component-type="PF6/Table"]'

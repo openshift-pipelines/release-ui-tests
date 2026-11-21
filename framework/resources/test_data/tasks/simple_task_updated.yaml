@@ -6,6 +6,10 @@ metadata:
   uid: "{{metadata.uid}}"
   labels:
     version: v2
+    app: tekton-test-updated
+  annotations:
+    description: An updated simple task for testing
+    owner: updated-test-user
 spec:
   steps:
     - name: echo

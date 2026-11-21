@@ -3,12 +3,10 @@ Feature: Validate Appropriate Pipeline links are available under left navigation
   Background:
     Given the user is logged into openshift console
 
-  @smoke
   Scenario: Verify Pipelines button is visible in left navigation bar
     Then Validate Pipelines button is visible in the left navigation bar
 
 
-  @smoke
   Scenario Outline: Verify appropriate links are available under pipelines button
     Given Validate Pipelines button is visible in the left navigation bar
     And the user clicks on Pipelines button

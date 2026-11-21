@@ -16,6 +16,8 @@ Usage:
 from playwright.async_api import Page
 
 from framework.config.config import Config
+from framework.ui_components.commons.annotations_modal import AnnotationsModal
+from framework.ui_components.commons.labels_modal import LabelsModal
 from framework.ui_components.pipelineruns.create_pipeline_run_page import CreatePipelineRunPage
 from framework.ui_components.pipelineruns.pipeline_runs_page import PipelineRunsPage
 from framework.ui_components.pipelineruns.pipelinerun_details_page import PipelineRunDetailsPage
@@ -134,7 +136,10 @@ class TaskRunPages:
     """
 
     def __init__(self, page: Page, config: Config) -> None:
+        self.list = TaskRunsPage(page, config)
         self.details = TaskRunDetailsPage(page, config)
+        self.labels_modal = LabelsModal(page, config)
+        self.annotations_modal = AnnotationsModal(page, config)
         self.yaml = TaskRunYamlPage(page, config)
 
 
@@ -160,6 +165,7 @@ class TasksPages:
         self.task = TaskPages(page, config)
         self.taskrun = TaskRunPages(page, config)
 
+        # dialog modals
         # Create pages
         self.create = CreateTaskPage(page, config)
         self.create_run = CreateTaskRunPage(page, config)

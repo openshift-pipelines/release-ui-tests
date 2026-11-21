@@ -16,13 +16,64 @@ import asyncio
 import logging
 from typing import Any, Dict
 
-from pytest_bdd import given, parsers, when
+from pytest_bdd import given, parsers, then, when
 
 from framework.cli.openshift_cli import OpenShiftCLI
 from framework.fixtures.async_bridge import run_async
 from framework.helpers.yaml_loader import YamlLoader
 
 logger = logging.getLogger(__name__)
+
+
+@when(parsers.parse('the user creates a task via cli from YAML file "{task_yaml_file}"'))
+def create_task_via_cli(
+    task_yaml_file: str, openshift_cli: OpenShiftCLI, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """
+    Create a Tekton Task via OpenShift CLI by loading YAML from test data.
+
+    Shared by TaskRun CRUD and TaskRun negative features so the step is always
+    available via pytest_plugins, even when CRUD scenarios are deselected.
+    """
+
+    async def _step() -> None:
+        yaml_content = YamlLoader.load_task_yaml(task_yaml_file)
+        success = await openshift_cli.apply_yaml(yaml_content)
+        assert success, f"Failed to create task from YAML file '{task_yaml_file}' via CLI"
+        metadata = YamlLoader.get_task_metadata(yaml_content)
+        task_name = metadata.get("name", "unknown")
+        logger.info(f"Successfully created task '{task_name}' via CLI")
+
+    run_async(playwright_event_loop, _step())
+
+
+@when(parsers.parse('the taskrun "{taskrun_name}" should appear in the taskruns list'))
+@then(parsers.parse('the taskrun "{taskrun_name}" should appear in the taskruns list'))
+def verify_taskrun_in_list(
+    page: Dict[str, Any], taskrun_name: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """Verify that a TaskRun with the given name appears in the TaskRuns list."""
+
+    async def _step() -> None:
+        taskrun_visible = await page["tasks"].runs.verify_taskrun_in_list(taskrun_name)
+        assert taskrun_visible, f"TaskRun '{taskrun_name}' does not appear in TaskRuns list"
+
+    run_async(playwright_event_loop, _step())
+
+
+@then(parsers.parse('the taskrun "{taskrun_name}" should not appear in the taskruns list'))
+def verify_taskrun_not_in_list(
+    page: Dict[str, Any], taskrun_name: str, playwright_event_loop: asyncio.AbstractEventLoop
+) -> None:
+    """Verify that a TaskRun with the given name does NOT appear in the TaskRuns list."""
+
+    async def _step() -> None:
+        data_loaded = await page["tasks"].runs.verify_task_runs_tab_data_load()
+        assert data_loaded, "TaskRuns list failed to reload after deletion"
+        taskrun_not_visible = await page["tasks"].runs.verify_taskrun_not_in_list(taskrun_name)
+        assert taskrun_not_visible, f"TaskRun '{taskrun_name}' still appears in TaskRuns list after deletion"
+
+    run_async(playwright_event_loop, _step())
 
 
 @given(parsers.parse('the user creates a pipeline via cli from YAML file "{pipeline_yaml_file}"'))

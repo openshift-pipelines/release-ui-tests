@@ -4,6 +4,8 @@ from playwright.async_api import Page
 
 from framework.config.config import Config
 from framework.locators.tasks import TaskRunsPageLocators
+from framework.ui_components.commons.annotations_modal import AnnotationsModal
+from framework.ui_components.commons.labels_modal import LabelsModal
 from framework.ui_components.tasks.tasks_base_page import TasksBasePage
 
 
@@ -16,6 +18,8 @@ class TaskRunsPage(TasksBasePage):
     def __init__(self, page: Page, config: Config) -> None:
         super().__init__(page, config)
         self.locators = TaskRunsPageLocators()
+        self.labels_modal = LabelsModal(page, config)
+        self.annotations_modal = AnnotationsModal(page, config)
         self.logger = logging.getLogger(__name__)
 
     async def click_name_column_header(self) -> bool:
@@ -87,6 +91,18 @@ class TaskRunsPage(TasksBasePage):
         locator = self.locators.TASKRUN_ROW_BY_NAME.format(taskrun_name=taskrun_name)
         return not await self.is_visible(locator, timeout=5000)
 
+    async def click_on_given_taskrun_in_list(self, taskrun_name: str) -> bool:
+        """
+        Click the name link in the row for the given task.
+
+        :param str task_name: Name of the task to click
+        :return: bool: True if the task name link is clicked, otherwise False when its row is absent
+        """
+        if await self.verify_taskrun_in_list(taskrun_name=taskrun_name):
+            link_locator = self.locators.TASKRUN_NAME_IN_ROW_BY_NAME.format(taskrun_name=taskrun_name)
+            return await self.click_element(link_locator)
+        return False
+
     async def get_taskrun_status(self, taskrun_name: str) -> str:
         """
         Get the status of a TaskRun from the TaskRuns list.
@@ -144,6 +160,18 @@ class TaskRunsPage(TasksBasePage):
             self.logger.error(f"Failed to click kebab menu for TaskRun '{taskrun_name}': {e}")
             return False
 
+    async def click_edit_labels_menu_item(self) -> bool:
+        """Click 'Edit labels' from an open TaskRun kebab menu."""
+        return await self.click_element(self.base_locators.EDIT_LABELS_MENU_ITEM)
+
+    async def click_edit_annotations_menu_item(self) -> bool:
+        """Click 'Edit annotations' from an open TaskRun kebab menu."""
+        return await self.click_element(self.base_locators.EDIT_ANNOTATIONS_MENU_ITEM)
+
+    async def click_edit_taskrun_menu_item(self) -> bool:
+        """Click 'Edit TaskRun' from an open TaskRun kebab menu."""
+        return await self.click_element(self.locators.EDIT_TASKRUN_MENU_ITEM)
+
     async def click_delete_taskrun_menu_item(self) -> bool:
         """
         Click 'Delete TaskRun' menu item from the kebab menu dropdown.
@@ -152,3 +180,11 @@ class TaskRunsPage(TasksBasePage):
         :return: bool: True if click succeeds
         """
         return await self.click_element(self.locators.DELETE_TASKRUN_MENU_ITEM)
+
+    async def open_edit_labels_dialog(self) -> bool:
+        """Open the Edit labels dialog from an already-open kebab menu."""
+        return await self.click_edit_labels_menu_item() and await self.labels_modal.is_visible()
+
+    async def open_edit_annotations_dialog(self) -> bool:
+        """Open the Edit annotations dialog from an already-open kebab menu."""
+        return await self.click_edit_annotations_menu_item() and await self.annotations_modal.is_visible()

@@ -46,13 +46,6 @@ class TasksBasePage(BasePage):
         """
         return await self.click_element(self.base_locators.FILTER_BUTTON)
 
-    async def click_column_management(self) -> bool:
-        """
-        Clicks the 'Column management' button to customize visible columns.
-        :return: bool: True if click succeeds.
-        """
-        return await self.click_element(self.base_locators.COLUMN_MANAGEMENT_BUTTON)
-
     async def click_clear_all_filters(self) -> bool:
         """
         Clicks the 'Clear all filters' button to reset all active filters.

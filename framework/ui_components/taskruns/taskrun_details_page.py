@@ -3,7 +3,9 @@ from playwright.async_api import Page
 from framework.config.config import Config
 from framework.locators.tasks import TaskRunDetailsPageLocators
 from framework.ui_components.base_page import BasePage
+from framework.ui_components.commons.annotations_modal import AnnotationsModal
 from framework.ui_components.commons.favorites import Favorites
+from framework.ui_components.commons.labels_modal import LabelsModal
 from framework.ui_components.commons.project_selector import ProjectSelector
 
 
@@ -15,6 +17,8 @@ class TaskRunDetailsPage(BasePage):
         self.locators = TaskRunDetailsPageLocators()
         self.project_selector = ProjectSelector(page, config)
         self.favorites = Favorites(page, config)
+        self.annotations_modal = AnnotationsModal(page, config)
+        self.labels_modal = LabelsModal(page, config)
 
     async def verify_on_page(self) -> bool:
         """
@@ -27,14 +31,26 @@ class TaskRunDetailsPage(BasePage):
             self.locators.TASKRUN_NAME_HEADING
         )
 
-    async def get_taskrun_name(self) -> str:
+    async def get_taskrun_heading_name(self) -> str:
         """
-        Extracts the TaskRun name from the page heading.
+        Extracts the TaskRun heading name from the page heading.
 
         :return: str: TaskRun name displayed in the heading
         """
         try:
             return await self.page.text_content(self.locators.TASKRUN_NAME_HEADING) or ""
+        except Exception as e:
+            self.logger.error(f"Failed to get TaskRun heading name: {e}")
+            return ""
+
+    async def get_taskrun_name(self) -> str:
+        """
+        Extracts the TaskRun name from name field.
+
+        :return: str: TaskRun name displayed in the name field
+        """
+        try:
+            return await self.page.text_content(self.locators.TASKRUN_NAME) or ""
         except Exception as e:
             self.logger.error(f"Failed to get TaskRun name: {e}")
             return ""
@@ -76,6 +92,39 @@ class TaskRunDetailsPage(BasePage):
             self.logger.error(f"Failed to get namespace: {e}")
             return ""
 
+    async def get_labels_value(self) -> str:
+        """
+        Clicks the 'Edit' button next to Labels to open the labels editor.
+        :return: bool: True if click succeeds.
+        """
+        return await self.page.locator(self.locators.LABELS_VALUE).inner_text()
+
+    async def get_annotations_count_value(self) -> str:
+        """
+        Returns the annotation count displayed in the details section.
+        :return: The annotations count text.
+        """
+        return await self.page.locator(self.locators.ANNOTATIONS_COUNT_VALUE).inner_text()
+
+    async def click_edit_labels(self) -> bool:
+        """
+        Clicks the 'TaskRuns' link in the breadcrumb to navigate back to TaskRuns list.
+
+        :return: bool: True if click succeeds
+        """
+        return await self.click_element(self.locators.EDIT_LABELS_BUTTON) and await self.labels_modal.is_visible()
+
+    async def click_edit_annotations(self) -> bool:
+        """
+        Clicks the 'TaskRuns' link in the breadcrumb to navigate back to TaskRuns list.
+
+        :return: bool: True if click succeeds
+        """
+        return (
+            await self.click_element(self.locators.EDIT_ANNOTATIONS_BUTTON)
+            and await self.annotations_modal.is_visible()
+        )
+
     async def get_status(self) -> str:
         """
         Gets the status of the TaskRun.
@@ -90,14 +139,6 @@ class TaskRunDetailsPage(BasePage):
         except Exception as e:
             self.logger.error(f"Failed to get status: {e}")
             return ""
-
-    async def click_task_link(self) -> bool:
-        """
-        Clicks the Task link to navigate to the referenced Task details.
-
-        :return: bool: True if click succeeds
-        """
-        return await self.click_element(self.locators.TASK_LINK)
 
     async def is_details_section_visible(self) -> bool:
         """

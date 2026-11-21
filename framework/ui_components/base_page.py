@@ -1,9 +1,12 @@
+import logging
 from typing import Optional, Pattern
 
 from playwright.async_api import Page
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from framework.config.config import Config
+
+logger = logging.getLogger(__name__)
 
 
 class BasePage:
@@ -51,10 +54,7 @@ class BasePage:
         :param int timeout: Timeout in milliseconds (default 5000ms = 5s)
         :return: bool: True if click succeeds
         """
-        import logging
         import time
-
-        logger = logging.getLogger(__name__)
 
         start_time = time.time()
         logger.info(f"[FAST CLICK] Starting fast click for locator: {locator} with timeout: {timeout}ms")
@@ -129,6 +129,35 @@ class BasePage:
                 await loc.wait_for(state="visible")
             return True
         except PlaywrightTimeoutError:
+            # Returning a bare False hides which selector timed out, which makes both
+            # manual debugging and `framework.agent.diagnose` guess. Say it out loud.
+            logger.info("[locator-timeout] %s", locator)
+            return False
+
+    async def exists(self, locator: str, timeout: Optional[int] = None) -> bool:
+        """Is the element in the DOM? Waits before answering "no".
+
+        Playwright auto-waits on actions such as click and fill, but NOT on queries:
+        `locator.count()` answers about this instant. Branching on it reports a control
+        as missing simply because its component has not rendered yet, and the branch is
+        then silently skipped. Prefer this over a bare `.count() > 0` presence check.
+
+        Use `is_visible` instead when the element must be interactable rather than
+        merely present.
+
+        :param str locator: The locator string to identify the element.
+        :param Optional[int] timeout: Timeout in milliseconds; page default when omitted.
+        :return: bool: True if the element attaches within the timeout.
+        """
+        try:
+            loc = self.page.locator(locator)
+            if timeout is not None:
+                await loc.first.wait_for(state="attached", timeout=timeout)
+            else:
+                await loc.first.wait_for(state="attached")
+            return True
+        except PlaywrightTimeoutError:
+            logger.info("[locator-timeout] %s", locator)
             return False
 
     async def is_element_enabled(self, locator: str, timeout: Optional[int] = None) -> bool:
@@ -148,6 +177,7 @@ class BasePage:
                 await loc.wait_for(state="visible")
             return await loc.is_enabled()
         except PlaywrightTimeoutError:
+            logger.info("[locator-timeout] %s", locator)
             return False
 
     async def wait_for_url_to_endwith(self, page_suffix: str, timeout: Optional[int] = None) -> bool:

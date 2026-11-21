@@ -5,15 +5,7 @@ class TriggersPageLocators:
     """Locators for the Triggers Page"""
 
     TRIGGERS_HEADER = 'h1:has-text("Triggers")'
-    _TRIGGERS_TAB_EXCLUDE = (
-        ':not([href*="/trigger-templates"]):not([href*="/trigger-bindings"]):not([href*="/cluster-trigger-bindings"])'
-    )
-    EVENT_LISTENERS_TAB = (
-        'a[href^="/triggers/all-namespaces"]'
-        + _TRIGGERS_TAB_EXCLUDE
-        + ', a[href^="/triggers/ns/"]'
-        + _TRIGGERS_TAB_EXCLUDE
-    )
+    EVENT_LISTENERS_TAB = 'a[role="tab"]:has-text("EventListeners")'
     TRIGGER_TEMPLATES_TAB = (
         'a[href^="/triggers/all-namespaces/"][href$="/trigger-templates"], '
         'a[href^="/triggers/ns/"][href$="/trigger-templates"]'
@@ -26,8 +18,8 @@ class TriggersPageLocators:
         'a[href^="/triggers/all-namespaces/"][href$="/cluster-trigger-bindings"], '
         'a[href^="/triggers/ns/"][href$="/cluster-trigger-bindings"]'
     )
-    TRIGGERS_DATA_LOAD_CHECK = "table.ReactVirtualized__VirtualGrid"
-    TRIGGERS_NO_DATA_LOAD_CHECK = "#no-resource-msg"
+    TRIGGERS_DATA_LOAD_CHECK = 'table[data-ouia-component-type="PF6/Table"]'
+    TRIGGERS_NO_DATA_LOAD_CHECK = 'div[data-test="empty-box-body"], div.pf-v6-c-empty-state__body'
 
 
 class CreateEventListenerPageLocators:

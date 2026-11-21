@@ -1,0 +1,25 @@
+{
+  "page_key": "tasks.list",
+  "url": "/tasks/ns/openshift-pipelines",
+  "ready": "table[data-ouia-component-type=\"PF6/Table\"]",
+  "candidates": {
+    "TASKS_HEADER": "h1:has-text(\"Tasks\")",
+    "CREATE_BUTTON": "[data-test=\"item-create\"]",
+    "TASKS_TAB": "a[role=\"tab\"]:has-text(\"Tasks\")",
+    "TASK_RUNS_TAB": "a[href^=\"/tasks/all-namespaces/\"][href$=\"/task-runs\"], a[href^=\"/tasks/ns/\"][href$=\"/task-runs\"]",
+    "SEARCH_INPUT": "input[aria-label=\"Search input\"]",
+    "KEBAB_MENU_BUTTON": {
+      "selector": "button[aria-label=\"Actions\"]",
+      "expect": "many"
+    },
+    "DATA_GRID": "table[data-ouia-component-type=\"PF6/Table\"]",
+    "NAME_COLUMN_HEADER": "role=columnheader[name=\"Name\"]",
+    "NAMESPACE_COLUMN_HEADER": "role=columnheader[name=\"Namespace\"]",
+    "CREATED_COLUMN_HEADER": "role=columnheader[name=\"Created\"]",
+    "ACTIONS_COLUMN_HEADER": "role=columnheader[name=\"Actions\"]",
+    "TASK_ROW_BY_NAME": {
+      "selector": "tr[data-ouia-component-type=\"PF6/TableRow\"]:has-text(\"{task_name}\")",
+      "sample": {"task_name": "argocd-task-sync-and-wait"}
+    }
+  }
+}

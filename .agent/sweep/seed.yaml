@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa-forge-sweep
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: probe-task
+  namespace: qa-forge-sweep
+spec:
+  params:
+    - name: message
+      type: string
+      default: hello
+  steps:
+    - name: echo
+      image: registry.access.redhat.com/ubi9/ubi-minimal
+      script: echo "$(params.message)"
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: probe-pipeline
+  namespace: qa-forge-sweep
+spec:
+  params:
+    - name: message
+      type: string
+      default: hello
+  tasks:
+    - name: run-probe
+      taskRef:
+        name: probe-task
+      params:
+        - name: message
+          value: $(params.message)
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: probe-trigger-binding
+  namespace: qa-forge-sweep
+spec:
+  params:
+    - name: message
+      value: $(body.message)
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: probe-trigger-template
+  namespace: qa-forge-sweep
+spec:
+  params:
+    - name: message
+      default: hello
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: TaskRun
+      metadata:
+        generateName: probe-template-run-
+      spec:
+        taskRef:
+          name: probe-task
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: probe-event-listener
+  namespace: qa-forge-sweep
+spec:
+  triggers:
+    - name: probe-trigger
+      bindings:
+        - ref: probe-trigger-binding
+      template:
+        ref: probe-trigger-template
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: ClusterTriggerBinding
+metadata:
+  name: probe-cluster-trigger-binding
+spec:
+  params:
+    - name: message
+      value: $(body.message)
+---
+# Detail, YAML, logs and task-run tabs all need a completed run to render.
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: probe-pipeline-run
+  namespace: qa-forge-sweep
+spec:
+  pipelineRef:
+    name: probe-pipeline
+  params:
+    - name: message
+      value: sweep
+---
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: probe-task-run
+  namespace: qa-forge-sweep
+spec:
+  taskRef:
+    name: probe-task
+  params:
+    - name: message
+      value: standalone
